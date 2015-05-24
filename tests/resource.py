@@ -59,13 +59,13 @@ class BooksResource(object):
             permission='update',
             subpath='/{bookId}',
             raises=(BookNotFound,),
-            returns=201)
+            returns=200)
     def update(self, book_id, data):
         book = get_book(book_id)
         book.update(data)
         return book
 
-    @api_method('put',
+    @api_method('delete',
             permission='delete',
             subpath='/{bookId}',
             raises=(BookNotFound,),
