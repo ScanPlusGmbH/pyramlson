@@ -17,8 +17,10 @@ install_requires = [
 tests_require = install_requires + [
     'pytest',
     'WebTest',
-    'mock',
-    'jsonschema',
+]
+testing_extras = tests_require + [
+    'nose',
+    'coverage',
 ]
 
 setup(name='pyramid_raml',
@@ -43,5 +45,8 @@ setup(name='pyramid_raml',
     zip_safe=False,
     install_requires=install_requires,
     tests_require=tests_require,
+    extras_require = {
+        'testing': testing_extras,
+    },
     test_suite="pyramid_raml",
 )
