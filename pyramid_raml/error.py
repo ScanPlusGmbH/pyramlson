@@ -3,12 +3,15 @@ from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import unauthenticated_userid
 
 
+def err_dict(message):
+    return dict(success=False, message=message)
+
 def generic(context, request):
     request.response.status_int = 500
     try:
-        response = {'message': context.args[0]}
+        response = err_dict(context.args[0])
     except IndexError:
-        response = {'message': 'Unknown error'}
+        response = err_dict('Unknown error')
     if request.registry.settings.get('pyramid_raml.debug'):
         response['traceback'] = ''.join(
                 traceback.format_exception(*request.exc_info))
@@ -22,9 +25,9 @@ def http_error(context, request):
             continue
         request.response.headers[header] = value
     if context.message:
-        return {'message': context.message}
+        return err_dict(context.message)
     else:
-        return {'message': context.status}
+        return err_dict(context.status)
 
 
 def notfound(context, request):
@@ -35,22 +38,13 @@ def notfound(context, request):
         elif context.detail:
             message = context.detail
     request.response.status_int = 404
-    return {
-        'success': False,
-        'message': message
-    }
+    return err_dict(message)
 
 
 def forbidden(request):
     if unauthenticated_userid(request):
         request.response.status_int = 403
-        return {
-            'success': False,
-            'message': 'You are not allowed to perform this action.'
-        }
+        return err_dict('You are not allowed to perform this action.')
     else:
         request.response.status_int = 401
-        return {
-            'success': False,
-            'message': 'You must login to perform this action.'
-        }
+        return err_dict('You must login to perform this action.')
