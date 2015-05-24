@@ -1,0 +1,24 @@
+# Wire up travis
+language: python
+sudo: false
+
+env:
+  - TOXENV=py27
+  - TOXENV=py32
+  - TOXENV=py33
+  - TOXENV=py34
+  - TOXENV=pypy
+  - TOXENV=py2-docs
+  - TOXENV=py3-docs
+  - TOXENV=py2-cover,py3-cover,coverage
+  - TOXENV=pep8
+
+install:
+  - travis_retry pip install tox
+
+script:
+  - travis_retry tox
+
+notifications:
+  email:
+    - igor.stroh@rulim.de
