@@ -5,7 +5,7 @@
   "required": true,
   "properties": {
     "id": {
-      "type": "string",
+      "type": "integer",
       "required": true
     },
     "title": {
@@ -18,7 +18,7 @@
     },
     "isbn": {
       "type": "string",
-      "required": true
+      "required": false
     }
   }
 }
