@@ -107,12 +107,13 @@ traits:
                 "isbn": "54321"
               }]
   /{bookId}:
-    displayName: Get a book by id
+    displayName: Get or update a book by id
     uriParameters:
       bookId:
         displayName: Book id
         type: integer
     get:
+        description: Get a book by its ID
         responses:
           200:
             body:
@@ -134,3 +135,36 @@ traits:
                     "success": false,
                     "message": "Book not found"
                   }
+    put:
+      description: Update an existing book given book id
+      body:
+        application/json:
+          schema: BookRecord
+          example: |
+            {
+              "id": 200,
+              "title": "Catcher in the rye",
+              "author": "J. D. Salinger",
+              "isbn": "54321"
+            }
+      responses:
+        200:
+          description: A book was successfully updated
+          body:
+            application/json:
+              schema: CommonResponseObject
+              example: | 
+                {
+                  "success": true,
+                  "message": "Book updated"
+                }
+        404:
+          description: Book not found
+          body:
+            application/json:
+              schema: CommonResponseObject
+              example: | 
+                {
+                  "success": false,
+                  "message": "Book not found"
+                }
