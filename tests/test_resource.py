@@ -4,9 +4,6 @@ import unittest
 from pyramid import testing
 
 from pyramid.config import Configurator
-from pyramid.testing import DummyRequest
-from pyramid.authorization import ACLAuthorizationPolicy
-from pyramid.authentication import AuthTktAuthenticationPolicy
 
 from .base import DATA_DIR
 from .resource import BOOKS
