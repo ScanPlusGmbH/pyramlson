@@ -1,0 +1,136 @@
+#%RAML 0.8
+title: Test API
+version: v1
+baseUri: http://{apiUri}/api/{version}
+mediaType: application/json
+protocols: [ HTTP ]
+schemas:
+  - BookRecord: !include schemas/BookRecord.json
+  - CommonResponseObject: |
+      {
+        "type": "object",
+        "$schema": "http://json-schema.org/draft-03/schema",
+        "id": "http://jsonschema.net",
+        "required": true,
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "required": true
+          },
+          "message": {
+            "type": "string",
+            "required": false
+          }
+        }
+      }
+securitySchemes:
+  - basic:
+      type: Basic Authentication
+traits:
+  - sorted:
+      description: A sorted collection resource
+      queryParameters:
+        sort_by:
+          displayName: Sort by property
+          description: The name of the property to sort by
+          type: string
+          example: "title"
+          default: "id"
+        sort_reversed:
+          displayName: Reversed sort order
+          description: Reverse the sort order
+          type: boolean
+          example: true
+          default: false
+  - paged:
+      description: A paged collection resource
+      queryParameters:
+        limit:
+          displayName: Limit
+          description: The maximum number of items to return
+          type: integer
+          example: 10
+          minimum: 0
+          default: 20
+          maximum: 50
+        offset:
+          displayName: Offset
+          description: The index of the first item to return
+          type: integer
+          example: 5
+          default: 0
+/books:
+  securedBy: [basic]
+  displayName: Books Service
+  description: Get your books here!
+  post:
+    description: Creates a new book record
+    body:
+      application/json:
+        schema: BookRecord
+    responses:
+      201:
+        description: A book was successfully created
+        body:
+          application/json:
+            schema: CommonResponseObject
+            example: | 
+              {
+                "success": true,
+                "message": "Book created"
+              }
+
+  get:
+    is: [paged, sorted]
+    responses:
+      200:
+        body:
+          application/json:
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-03/schema",
+                "type": "array",
+                "items": {
+                  "$ref": "BookRecord"
+                }
+              }
+            example: | 
+              [{
+                "id": 100,
+                "title": "War and piece",
+                "author": "Leo Tolstoi",
+                "isbn": "12345"
+              }, {
+                "id": 200,
+                "title": "Catcher in the rye",
+                "author": "J. D. Salinger",
+                "isbn": "54321"
+              }]
+  /{bookId}:
+    displayName: Get a book by id
+    uriParameters:
+      bookId:
+        displayName: Book id
+        type: integer
+    get:
+        responses:
+          200:
+            body:
+              application/json:
+                schema: BookRecord
+                example: | 
+                  {
+                    "id": 200,
+                    "title": "Catcher in the rye",
+                    "author": "J. D. Salinger",
+                    "isbn": "54321"
+                  }
+          404:
+            body:
+              application/json:
+                schema: CommonResponseObject
+                example: | 
+                  {
+                    "success": false,
+                    "message": "Book not found"
+                  }

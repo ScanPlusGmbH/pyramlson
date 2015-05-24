@@ -1,0 +1,4 @@
+pyramid_raml.egg-info/
+__pycache__
+*.pyc
+*.swp
