@@ -20,8 +20,8 @@ class RamlApiDefinition(object):
 
     def __init__(self, apidef_path):
         self.raml = ramlfications.parse(apidef_path)
-        self.api_base_uri = self.raml.base_uri
-        self.base_path = urlparse(self.api_base_uri).path
+        self.base_uri = self.raml.base_uri
+        self.base_path = urlparse(self.base_uri).path
 
     def get_trait(self, name):
         if not self.raml.traits:
