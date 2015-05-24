@@ -1,6 +1,5 @@
 import json
 import os
-import pytest
 from pyramid_raml import apidef
 
 from .base import DATA_DIR
