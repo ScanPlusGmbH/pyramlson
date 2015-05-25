@@ -95,16 +95,16 @@ class api_service(object):
 
     def callback(self, scanner, name, cls):
         config = scanner.config.with_package(self.module)
-        self.apidef = config.registry.queryUtility(IRamlApiDefinition)
-        config.include(self.create_routes, route_prefix=self.apidef.base_path)
-        log.debug("registered routes with base route '{}'".format(self.apidef.base_path))
+        apidef = config.registry.queryUtility(IRamlApiDefinition)
+        config.include(self.create_routes, route_prefix=apidef.base_path)
+        log.debug("registered routes with base route '{}'".format(apidef.base_path))
         self.create_views(config)
 
     def create_routes(self, config):
         self.routes = []
-        log.debug("Creating routes")
         supported_methods = defaultdict(set)
-        for resource in self.apidef.get_resources(self.resource_path):
+        apidef = config.registry.queryUtility(IRamlApiDefinition)
+        for resource in apidef.get_resources(self.resource_path):
             method = resource.method.upper()
             supported_methods[resource.path].add(method)
             log.debug("Registering route with relative path {}, method {}".format(resource.path, method))
@@ -157,13 +157,11 @@ class api_service(object):
             # URI parameters have the highest prio
             if resource.uri_params:
                 for param in resource.uri_params:
-                    if param.required:
-                        if param.name in request.matchdict:
-                            required_params.append(request.matchdict[param.name])
-                        else:
-                            HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
-                    else:
-                        optional_params[param.name] = request.matchdict.get(param.name, param.default)
+                    # pyramid router makes sure the URI params are all
+                    # set, otherwise the view isn't called all, because
+                    # a NotFound error is triggered before the request
+                    # can be routed to this view
+                    required_params.append(request.matchdict[param.name])
             # If there's a body defined - include it before traits or query params
             if resource.body:
                 required_params.append(prepare_json_body(request, resource))
@@ -171,12 +169,12 @@ class api_service(object):
             #for (name, trait) in self.apidef.get_resource_traits(resource).items():
             if resource.query_params:
                 for param in resource.query_params:
-                    # FIXME not sure about this one, since query params may come unsorted
-                    if param.required:
-                        if param.name in request.params:
-                            required_params.append(request.params[param.name])
-                        else:
-                            raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
+                    # query params are always named (i.e. not positional)
+                    # so they effectively become keyword agruments in a
+                    # method call, we just make sure they are present
+                    # in the request if marked as 'required'
+                    if param.required and param.name not in request.params:
+                        raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
                     else:
                         optional_params[param.name] = request.params.get(param.name, param.default)
             try:
@@ -215,8 +213,6 @@ class api_service(object):
         return view
 
 def prepare_json_body(request, resource):
-    if not resource.body:
-        return None
     data = None
     for body in resource.body:
         # only json is supported as of now
