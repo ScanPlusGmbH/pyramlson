@@ -34,9 +34,7 @@ def test_all_resources():
 
 def test_schema():
     api = get_api()
-    resource = list(api.get_resources('/books'))[0]
-    body = resource.body[0]
-    assert api.get_schema(body, 'application/json') is None
+    assert api.get_schema(None, 'application/json') is None
 
     resource = list(api.get_resources('/books'))[1]
     body = resource.body[0]
