@@ -45,14 +45,6 @@ class RamlApiDefinition(object):
                 return schemas[name]
 
     def get_schema(self, body, mime_type):
-        if not body:
-            return None
-        body = None
-        for b in body:
-            if b.mime_type != mime_type:
-                continue
-            body = b
-            break
         if not body or not body.schema:
             return None
         schema = body.schema
