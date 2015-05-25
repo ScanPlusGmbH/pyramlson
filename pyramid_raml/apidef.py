@@ -33,14 +33,6 @@ class RamlApiDefinition(object):
                     self.__traits_cache[name] = trait
         return self.__traits_cache.get(name)
 
-    def get_resource_traits(self, resource):
-        if not resource.traits:
-            return dict()
-        ret = dict()
-        for trait in resource.traits:
-            ret[trait.name] = self.get_trait(trait.name)
-        return ret
-
     def get_resources(self, prefix=None):
         if not prefix:
             return self.raml.resources
