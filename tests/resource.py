@@ -33,7 +33,8 @@ class BookNotFound(Exception):
 class BooksResource(object):
 
     __acl__ = [
-        (Allow, 'api-user', ('view', 'create', 'update')),
+        (Allow, 'api-user-reader', ('view', )),
+        (Allow, 'api-user-writer', ('view', 'create', 'update')),
         (Allow, 'admin', ALL_PERMISSIONS),
         DENY_ALL,
     ]
@@ -73,3 +74,7 @@ class BooksResource(object):
     def delete(self, book_id):
         book = get_book(book_id)
         BOOKS.pop(book["id"])
+
+    @api_method('get', subpath='/some/other/things')
+    def things(self, thing_type=None):
+        return dict(thing_type=thing_type)
