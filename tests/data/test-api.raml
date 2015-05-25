@@ -147,6 +147,8 @@ traits:
               "author": "J. D. Salinger",
               "isbn": "54321"
             }
+        application/xml:
+          schema: BookRecord
       responses:
         200:
           description: A book was successfully updated
@@ -168,3 +170,17 @@ traits:
                   "success": false,
                   "message": "Book not found"
                 }
+  /some/other/things:
+    displayName: All your REST things!
+    description: Get your things here!
+    get:
+      queryParameters:
+        thing_type:
+          displayName: The type of things you want
+          required: true
+          type: string
+          example: 'foo'
+      responses:
+        200:
+          body:
+            application/json: !!null
