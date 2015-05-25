@@ -1,7 +1,6 @@
 import os
 import json
 import venusian
-import jsonschema
 import logging
 
 from inspect import getmembers
@@ -15,6 +14,7 @@ from pyramid.httpexceptions import (
 from pyramid.interfaces import IExceptionResponse
 
 from .apidef import IRamlApiDefinition
+from .utils import prepare_body
 
 log = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ class api_service(object):
                     required_params.append(request.matchdict[param.name])
             # If there's a body defined - include it before traits or query params
             if resource.body:
-                required_params.append(prepare_json_body(request, resource))
+                required_params.append(prepare_body(request, resource))
             # FIXME: handle traits
             #for (name, trait) in self.apidef.get_resource_traits(resource).items():
             if resource.query_params:
@@ -211,28 +211,6 @@ class api_service(object):
             response.headers['Access-Control-Allow-Methods'] = ', '.join(supported_methods)
             return response
         return view
-
-def prepare_json_body(request, resource):
-    data = None
-    for body in resource.body:
-        # only json is supported as of now
-        if body.mime_type != 'application/json':
-            continue
-        if not request.body:
-            raise HTTPBadRequest(u"Empty JSON body!".format(request.body))
-        try:
-            data = request.json_body
-        except ValueError as e:
-            raise HTTPBadRequest(u"Invalid JSON body: {}".format(request.body))
-        apidef = request.registry.queryUtility(IRamlApiDefinition)
-        schema = apidef.get_schema(resource)
-        if schema:
-            try:
-                jsonschema.validate(data, schema, format_checker=jsonschema.draft4_format_checker)
-            except jsonschema.ValidationError as e:
-                raise HTTPBadRequest(str(e))
-        return data
-    return None
 
 
 def includeme(config):

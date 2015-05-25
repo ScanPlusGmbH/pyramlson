@@ -14,6 +14,7 @@ class ResourceFunctionalTests(unittest.TestCase):
     def setUp(self):
         settings = {
             'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
+            'pyramid_raml.debug': 'true',
         }
         self.config = testing.setUp(settings=settings)
         self.config.include('pyramid_raml')
@@ -58,6 +59,14 @@ class ResourceFunctionalTests(unittest.TestCase):
         r = app.put('/api/v1/books/111', status=400)
         assert r.json_body['message'] == "Empty JSON body!"
         assert r.json_body['success'] == False
+
+        r = app.request('/api/v1/books/111',
+            method='PUT',
+            body=b'{',
+            status=400,
+            content_type='application/json')
+        assert r.json_body['success'] == False
+        assert r.json_body['message'] == "Invalid JSON body: b'{'"
 
         book_id = 10
         fake_book = {'author': 'Blah'}

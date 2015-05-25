@@ -1,6 +1,7 @@
 import logging
 import ramlfications
 from zope.interface import Interface
+from lxml import etree
 
 try:
     from urllib.parse import urlparse
@@ -43,12 +44,11 @@ class RamlApiDefinition(object):
             if name in schemas:
                 return schemas[name]
 
-    def get_schema(self, resource, mime_type='application/json'):
-        # FIXME Support xml
-        if not resource.body:
+    def get_schema(self, body, mime_type):
+        if not body:
             return None
         body = None
-        for b in resource.body:
+        for b in body:
             if b.mime_type != mime_type:
                 continue
             body = b
@@ -56,7 +56,14 @@ class RamlApiDefinition(object):
         if not body or not body.schema:
             return None
         schema = body.schema
-        # FIXME there should be a better way to detect an inline schema
-        if '$schema' not in schema:
-            schema = self.get_schema_def(schema)
-        return schema
+        if mime_type == 'application/json':
+            # FIXME there should be a better way to detect an inline schema
+            if '$schema' not in schema:
+                schema = self.get_schema_def(schema)
+            return schema
+        elif mime_type == 'text/xml':
+            if '<xsd:schema' not in schema:
+                schema = self.get_schema_def(schema)
+            if not schema:
+                return None
+            return etree.XMLSchema(etree.fromstring(schema))

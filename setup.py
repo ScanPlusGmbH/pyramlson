@@ -12,6 +12,7 @@ install_requires = [
     'pyramid',
     'jsonschema',
     'ramlfications',
+    'lxml'
 ]
 
 tests_require = install_requires + [
