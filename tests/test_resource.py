@@ -71,4 +71,34 @@ class ResourceFunctionalTests(unittest.TestCase):
         fake_book = {'id': book_id, 'title': 'Foo', 'author': 'Blah'}
         r = app.put_json('/api/v1/books/{}'.format(book_id), params=fake_book, status=200)
 
+    def test_default_options(self):
+        app = self.testapp
+        r = app.options('/api/v1/books', status=204)
+        header = r.headers['Access-Control-Allow-Methods'].split(', ')
+        assert 'POST' in header
+        assert 'GET' in header
+        assert 'OPTIONS' in header
 
+    def test_required_uriparams(self):
+        app = self.testapp
+        tt = 'a'
+        r = app.get('/api/v1/books/some/other/things', params=dict(thing_type=tt), status=200)
+        assert r.json_body['thing_type'] == tt
+
+    def test_missing_required_uriparams(self):
+        app = self.testapp
+        tt = 'a'
+        r = app.get('/api/v1/books/some/other/things', params=dict(foo='bar'), status=400)
+        assert r.json_body['message'] == 'thing_type (string) is required'
+
+class NoMatchingResourceMethodTests(unittest.TestCase):
+
+    def setUp(self):
+        settings = {
+            'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
+        }
+        self.config = testing.setUp(settings=settings)
+
+    def test_valueerror(self):
+        self.config.include('pyramid_raml')
+        self.assertRaises(ValueError, self.config.scan, '.bad_resource')

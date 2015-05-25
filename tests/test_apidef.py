@@ -8,8 +8,8 @@ from pyramid_raml import apidef
 
 from .base import DATA_DIR
 
-def get_api():
-    path = os.path.join(DATA_DIR, 'test-api.raml')
+def get_api(which='test-api.raml'):
+    path = os.path.join(DATA_DIR, which)
     return apidef.RamlApiDefinition(path)
 
 def test_base():
@@ -18,10 +18,19 @@ def test_base():
     assert api.base_uri == 'http://{apiUri}/api/v1'
     assert api.base_path == '/api/v1'
 
-def test_resources():
+def test_notexisting_resources():
     api = get_api()
     assert len(list(api.get_resources('/foo'))) == 0
     assert list(api.get_resources('/books'))[0] == api.raml.resources[0]
+
+def test_filtered_resources():
+    api = get_api('test-errors-api.raml')
+    assert len(list(api.get_resources('/foo'))) == 1
+    assert len(list(api.get_resources('/bar'))) == 1
+
+def test_all_resources():
+    api = get_api('test-errors-api.raml')
+    assert len(list(api.get_resources())) == 3
 
 def test_schema():
     api = get_api()
@@ -48,6 +57,10 @@ def test_notexisting_traits():
     api = get_api()
     trait = api.get_trait('foo')
     assert trait is None
+
+def test_empty_traits():
+    api = get_api('test-errors-api.raml')
+    assert api.get_trait('foo') is None
 
 class TestMissingRaml(unittest.TestCase):
     def test_missing_raml(self):
