@@ -1,14 +1,28 @@
 import jsonschema
 from lxml import etree
-from .apidef import IRamlApiDefinition
 from lxml.etree import XMLSyntaxError, DocumentInvalid
+from pyramid.httpexceptions import HTTPBadRequest
 
+from .apidef import IRamlApiDefinition
+
+
+# last failsafe mime type for response objects,
+# is used when everything else fails
+DEFAULT_MTYPE = 'application/json'
+
+def get_accepted_mtype(request):
+    accepted = request.accept
+    settings = request.registry.settings
+    if accepted not in SUPPORTED_CONVERTERS:
+        return settings.get('pyramid_raml.default_mime_type', DEFAULT_MTYPE)
+    return accepted
 
 def prepare_body(request, resource):
+    accepted = get_accepted_mtype(request)
     for body in resource.body:
         # only json is supported as of now
         mtype = body.mime_type
-        if mtype == request.content_type:
+        if mtype == accepted:
             if mtype not in SUPPORTED_CONVERTERS:
                 raise HTTPBadRequest(u"Sorry, body of mime type '{}' is not supported, please use one of {}".format(
                     mtype, ', '.join(SUPPORTED_CONVERTERS.keys())))
