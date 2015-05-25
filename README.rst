@@ -7,6 +7,4 @@
 Build REST APIs with RAML_ and Pyramid_.
 
 .. _RAML: http://raml.org/
-    :target: _blank
 .. _Pyramid: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
-    :target: _blank
