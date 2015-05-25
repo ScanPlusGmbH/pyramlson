@@ -57,7 +57,7 @@ class ResourceFunctionalTests(unittest.TestCase):
     def test_json_validation_error(self):
         app = self.testapp
         r = app.put('/api/v1/books/111', status=400)
-        assert r.json_body['message'] == "Empty JSON body!"
+        assert r.json_body['message'] == "Empty body!"
         assert r.json_body['success'] == False
 
         r = app.request('/api/v1/books/111',
