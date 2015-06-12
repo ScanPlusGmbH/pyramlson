@@ -100,7 +100,7 @@ def get_renderer(request, resource, status_code):
                 schema = apidef.get_schema(b, mtype)
                 break
     else:
-        mtype = default_mime_type
+        mtype = default_mtype
 
     if mtype not in SUPPORTED_RENDERERS:
         mtype = default_mtype
