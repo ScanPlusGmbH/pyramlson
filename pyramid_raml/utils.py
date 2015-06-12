@@ -86,28 +86,21 @@ def get_renderer(request, resource, status_code):
     schema = None
     apidef = request.registry.queryUtility(IRamlApiDefinition)
     default_mtype = apidef.default_mime_type
-    if not resource.body:
-        # find matching response body definition in resource
-        body = None
-        for response in resource.responses:
-            if response.code == status_code:
-                body = response.body
-                break
-        if body:
-            mtype = request.accept.best_match((b.mime_type for b in body))
-            for b in body:
-                if b.mime_type == mtype:
-                    schema = b.schema
-                    schema = apidef.get_schema(b, mtype)
-                    break
-        else:
-            mtype = default_mime_type
-    else:
-        mtype = request.accept.best_match((b.mime_type for b in resource.body))
-        for b in resource.body:
+    # find matching response body definition in resource
+    body = None
+    for response in resource.responses:
+        if response.code == status_code:
+            body = response.body
+            break
+    if body:
+        mtype = request.accept.best_match((b.mime_type for b in body))
+        for b in body:
             if b.mime_type == mtype:
+                schema = b.schema
                 schema = apidef.get_schema(b, mtype)
                 break
+    else:
+        mtype = default_mime_type
 
     if mtype not in SUPPORTED_RENDERERS:
         mtype = default_mtype
@@ -116,8 +109,11 @@ def get_renderer(request, resource, status_code):
 
 def render_view(request, resource, data, status_code):
     """Render data to response using matching renderer"""
+    validate = request.registry.settings.get('pyramid_raml.validate_response', '')
+    # validate = validate.lower() in ('true', 'yes')
+    validate = True
     (schema, renderer) = get_renderer(request, resource, status_code)
-    state = RendererState(schema, data)
+    state = RendererState(schema, data, validate)
     response = request.response
     response.status_int = status_code
     return render_to_response(renderer, state, request=request, response=response)

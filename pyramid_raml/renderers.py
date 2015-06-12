@@ -8,16 +8,17 @@ from lxml import etree
 from collections import namedtuple
 
 
-RendererState = namedtuple('RendererState', ['schema', 'data'])
+RendererState = namedtuple('RendererState', ['schema', 'data', 'validate'])
 
 
 def validating_xml_serializer(obj, **kw):
-    (data, xmlschema) = (obj, None)
+    (data, xmlschema, validate) = (obj, None, False)
     if type(obj) is RendererState:
         data = obj.data
         xmlschema = obj.schema
+        validate = obj.validate
     serialized = dicttoxml.dicttoxml(data, **kw)
-    if xmlschema:
+    if validate and xmlschema:
         xmlschema.assertValid(etree.fromstring(serialized))
     return serialized
 
@@ -44,17 +45,14 @@ class ValidatingXmlRenderer(object):
 
 
 def validating_json_serializer(obj, default, **kw):
-    (data, schema) = (obj, None)
+    (data, schema, validate) = (obj, None, False)
     if type(obj) is RendererState:
         data = obj.data
         schema = obj.schema
-    if schema:
+        validate = obj.validate
+    if validate and schema:
         # will raise a jsonschema.ValidationError in case of a validation error
-        try:
-            jsonschema.validate(data, schema, format_checker=jsonschema.draft4_format_checker)
-        except Exception as e:
-            print("VALIDATION PROBLEM", str(e))
-            print("".join(traceback.format_exception(*request.exc_info)))
+        jsonschema.validate(data, schema, format_checker=jsonschema.draft4_format_checker)
     return json.dumps(data, default=default, **kw)
 
 

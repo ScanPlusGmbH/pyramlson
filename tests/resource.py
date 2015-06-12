@@ -64,7 +64,7 @@ class BooksResource(object):
     def update(self, book_id, data):
         book = get_book(book_id)
         book.update(data)
-        return book
+        return dict(success=True)
 
     @api_method('delete',
             permission='delete',
