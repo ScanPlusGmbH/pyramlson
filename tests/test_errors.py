@@ -76,6 +76,7 @@ class UnknownErrorTests(unittest.TestCase):
     def setUp(self):
         settings = {
             'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-errors-api.raml'),
+            'pyramid_raml.debug': 'true',
         }
         self.config = testing.setUp(settings=settings)
         self.config.include('pyramid_raml')

@@ -1,5 +1,4 @@
 import os
-import json
 import venusian
 import logging
 
@@ -12,9 +11,10 @@ from pyramid.httpexceptions import (
     HTTPNoContent,
 )
 from pyramid.interfaces import IExceptionResponse
+from pyramid.renderers import render_to_response
 
 from .apidef import IRamlApiDefinition
-from .utils import prepare_body
+from .utils import prepare_body, render_view
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ DEFAULT_METHOD_MAP = {
     'options': 200,
     'patch': 200,
 }
+
 MethodRestConfig = namedtuple('MethodRestConfig', [
     'http_method',
     'permission',
@@ -135,7 +136,6 @@ class api_service(object):
             log.debug("Registering view {} for route name '{}', resource {}".format(view, route_name, resource))
             config.add_view(view,
                     route_name=route_name,
-                    renderer='json',
                     context=self.cls,
                     request_method=method,
                     permission=permission)
@@ -178,8 +178,8 @@ class api_service(object):
                     else:
                         optional_params[param.name] = request.params.get(param.name, param.default)
             try:
-                request.response.status_int = cfg.returns
-                return meth(*required_params, **optional_params)
+                result = meth(*required_params, **optional_params)
+                return render_view(request, resource, result, cfg.returns)
             except Exception as exc:
                 code = getattr(exc, 'code', None)
                 if code is None:
@@ -188,7 +188,8 @@ class api_service(object):
                     for err in cfg.raises:
                         if err.code == code:
                             request.response.status_int = code
-                            return dict(success=False, message=str(exc))
+                            data = dict(success=False, message=str(exc))
+                            return render_view(request, resource, data, code)
                 raise exc
 
         return (view, cfg.permission)
@@ -226,6 +227,10 @@ def includeme(config):
        config.include('pyramid_raml')
     """
     from pyramid_raml.apidef import RamlApiDefinition, IRamlApiDefinition
+    from pyramid_raml.renderers import (
+        ValidatingXmlRenderer,
+        ValidatingJsonRenderer
+    )
     settings = config.registry.settings
     settings['pyramid_raml.debug'] = \
             settings.get('debug_all') or \
@@ -235,6 +240,9 @@ def includeme(config):
     config.add_view('pyramid_raml.error.http_error', context=IExceptionResponse, renderer='json')
     config.add_notfound_view('pyramid_raml.error.notfound', renderer='json')
     config.add_forbidden_view('pyramid_raml.error.forbidden', renderer='json')
+
+    config.add_renderer('validating_xml', ValidatingXmlRenderer())
+    config.add_renderer('validating_json', ValidatingJsonRenderer())
 
     if 'pyramid_raml.apidef_path' not in settings:
         raise ValueError("Cannot create RamlApiDefinition without a RAML file.")

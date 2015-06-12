@@ -1,5 +1,8 @@
 import logging
 import ramlfications
+import xmltodict
+
+from collections import OrderedDict
 from zope.interface import Interface
 from lxml import etree
 
@@ -23,6 +26,10 @@ class RamlApiDefinition(object):
         self.raml = ramlfications.parse(apidef_path)
         self.base_uri = self.raml.base_uri
         self.base_path = urlparse(self.base_uri).path
+
+    @property
+    def default_mime_type(self):
+        return self.raml.media_type
 
     def get_trait(self, name):
         if not self.raml.traits:
@@ -53,9 +60,11 @@ class RamlApiDefinition(object):
             if '$schema' not in schema:
                 schema = self.get_schema_def(schema)
             return schema
-        elif mime_type == 'text/xml':
+        elif mime_type in ('text/xml', 'application/xml'):
             if '<xsd:schema' not in schema:
                 schema = self.get_schema_def(schema)
             if not schema:
                 return None
+            if isinstance(schema, OrderedDict):
+                schema = bytes(xmltodict.unparse(schema), 'UTF-8')
             return etree.XMLSchema(etree.fromstring(schema))

@@ -25,9 +25,13 @@ class ResourceFunctionalTests(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
 
-    def test_get_list(self):
+    def test_get_list_json(self):
         r = self.testapp.get('/api/v1/books', status=200)
         assert r.json_body == list(BOOKS.values())
+
+    def test_get_list_xml(self):
+        r = self.testapp.get('/api/v1/books', headers={'Accept': 'application/xml'}, status=200)
+        assert r.body == b'<?xml version="1.0" encoding="UTF-8" ?><root><item><author>Frank Herbert</author><title>Dune</title><id>123</id><isbn>98765</isbn></item><item><author>Dan Simmons</author><title>Hyperion Cantos</title><id>456</id><isbn>56789</isbn></item></root>'
 
     def test_get_one(self):
         app = self.testapp
@@ -73,6 +77,16 @@ class ResourceFunctionalTests(unittest.TestCase):
         r = app.put_json('/api/v1/books/{}'.format(book_id), params=fake_book, status=400)
         assert r.json_body['success'] == False
         assert 'Failed validating' in r.json_body['message']
+
+    def test_not_accepted_body_mime_type(self):
+        app = self.testapp
+        r = app.request('/api/v1/books/123',
+            method='PUT',
+            body=b'hi there',
+            status=400,
+            content_type='text/plain')
+        assert r.json_body['success'] == False
+        assert "Unsupported body content-type: 'text/plain'" in r.json_body['message']
 
     def test_succesful_put(self):
         app = self.testapp

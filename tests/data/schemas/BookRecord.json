@@ -1,24 +1,25 @@
 {
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "BookRecord",
+  "description": "A book record",
   "type": "object",
-  "$schema": "http://json-schema.org/draft-03/schema",
-  "id": "http://jsonschema.net",
-  "required": true,
   "properties": {
     "id": {
       "type": "integer",
-      "required": true
+      "description": "The id of the book"
     },
     "title": {
       "type": "string",
-      "required": true
+      "description": "Book title"
     },
     "author": {
       "type": "string",
-      "required": true
+      "description": "Book author"
     },
     "isbn": {
       "type": "string",
-      "required": false
+      "description": "Book ISDB (optional)"
     }
-  }
+  },
+  "required": ["id", "title", "author"]
 }
