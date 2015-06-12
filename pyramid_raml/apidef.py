@@ -26,6 +26,8 @@ class RamlApiDefinition(object):
         self.raml = ramlfications.parse(apidef_path)
         self.base_uri = self.raml.base_uri
         self.base_path = urlparse(self.base_uri).path
+        if self.base_path.endswith('/'):
+            self.base_path = self.base_path[:-1]
 
     @property
     def default_mime_type(self):

@@ -91,26 +91,31 @@ class api_service(object):
     """
 
     def __init__(self, resource_path):
+        log.debug("Resource path: {}".format(resource_path))
         self.resource_path = resource_path
         self.resources = []
 
     def callback(self, scanner, name, cls):
         config = scanner.config.with_package(self.module)
         apidef = config.registry.queryUtility(IRamlApiDefinition)
-        config.include(self.create_routes, route_prefix=apidef.base_path)
+        self.create_routes(config)
         log.debug("registered routes with base route '{}'".format(apidef.base_path))
         self.create_views(config)
 
     def create_routes(self, config):
+        log.debug("Creating routes for {}".format(self.resource_path))
         self.routes = []
         supported_methods = defaultdict(set)
         apidef = config.registry.queryUtility(IRamlApiDefinition)
         for resource in apidef.get_resources(self.resource_path):
             method = resource.method.upper()
-            supported_methods[resource.path].add(method)
-            log.debug("Registering route with relative path {}, method {}".format(resource.path, method))
-            route_name = "{}-{}-{}".format(resource.display_name, method, resource.path)
-            config.add_route(route_name, resource.path, factory=self.cls, request_method=method)
+            path = resource.path
+            if apidef.base_path:
+                path = "{}{}".format(apidef.base_path, resource.path)
+            supported_methods[path].add(method)
+            log.debug("Registering route with path {}, method {}".format(path, method))
+            route_name = "{}-{}-{}".format(resource.display_name, method, path)
+            config.add_route(route_name, path, factory=self.cls, request_method=method)
             self.resources.append((route_name, method, resource, None))
         # add a default OPTIONS route if none was defined by the resource
         opts_meth = 'OPTIONS'
@@ -120,12 +125,11 @@ class api_service(object):
                 route_name = "{}-{}-{}".format(resource.display_name, opts_meth, path)
                 config.add_route(route_name, path, factory=self.cls, request_method=opts_meth)
                 methods = list(supported_methods[path]) + [opts_meth]
-                self.resources.append((route_name, opts_meth, resource,
-                    self.create_options_view(methods)))
+                self.resources.append((route_name, opts_meth, resource, create_options_view(methods)))
 
     def create_views(self, config):
         for (route_name, method, resource, default_view) in self.resources:
-            log.debug("Creating route {}".format(route_name))
+            log.debug("Creating view {}".format(route_name))
             if default_view:
                 config.add_view(default_view,
                     route_name=route_name,
@@ -206,12 +210,13 @@ class api_service(object):
                 return (member, cfg)
         return (None, None)
 
-    def create_options_view(self, supported_methods):
-        def view(context, request):
-            response = HTTPNoContent()
-            response.headers['Access-Control-Allow-Methods'] = ', '.join(supported_methods)
-            return response
-        return view
+def create_options_view(supported_methods):
+    def view(context, request):
+        response = HTTPNoContent()
+        response.headers['Access-Control-Allow-Methods'] =\
+            ', '.join(supported_methods)
+        return response
+    return view
 
 
 def includeme(config):

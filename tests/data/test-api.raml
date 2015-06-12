@@ -190,3 +190,20 @@ traits:
         200:
           body:
             application/json: !!null
+/token:
+    displayName: Token
+    post:
+        description: Create session token
+        body:
+            application/json:
+                schema: !include schemas/credentials.json
+        response:
+            200:
+                description: Session token
+                schema: !include schemas/token.json
+                body:
+                    application/json:
+                        example: |
+                            {
+                                "token": "AQIC5w...srA.*AAJT...jI5OTg4*"
+                            }
