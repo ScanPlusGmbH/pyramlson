@@ -17,14 +17,6 @@ log = logging.getLogger(__name__)
 # is used when everything else fails
 DEFAULT_MTYPE = 'application/json'
 
-def get_accepted_mtype(request, wanted):
-    settings = request.registry.settings
-    accepted = request.accept.best_match((wanted,))
-    if accepted not in SUPPORTED_CONVERTERS:
-        ret = settings.get('pyramid_raml.default_mime_type', DEFAULT_MTYPE)
-        log.info("Client accepts body of type {} which is not in supported, chosing {}".format(accepted, ret))
-        return ret
-    return accepted
 
 def find_matching_body(request, resource):
     for body in resource.body:
