@@ -1,3 +1,4 @@
+import re
 import os
 import venusian
 import logging
@@ -161,11 +162,13 @@ class api_service(object):
             # URI parameters have the highest prio
             if resource.uri_params:
                 for param in resource.uri_params:
+                    param_value = request.matchdict[param.name]
+                    validate_param(param, param_value)
                     # pyramid router makes sure the URI params are all
                     # set, otherwise the view isn't called all, because
                     # a NotFound error is triggered before the request
                     # can be routed to this view
-                    required_params.append(request.matchdict[param.name])
+                    required_params.append(param_value)
             # If there's a body defined - include it before traits or query params
             if resource.body:
                 required_params.append(prepare_body(request, resource))
@@ -173,6 +176,9 @@ class api_service(object):
             #for (name, trait) in self.apidef.get_resource_traits(resource).items():
             if resource.query_params:
                 for param in resource.query_params:
+                    param_value = request.params.get(param.name, param.default)
+                    if param_value:
+                        validate_param(param, param_value)
                     # query params are always named (i.e. not positional)
                     # so they effectively become keyword agruments in a
                     # method call, we just make sure they are present
@@ -180,7 +186,7 @@ class api_service(object):
                     if param.required and param.name not in request.params:
                         raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
                     else:
-                        optional_params[param.name] = request.params.get(param.name, param.default)
+                        optional_params[param.name] = param_value
             try:
                 result = meth(*required_params, **optional_params)
                 return render_view(request, resource, result, cfg.returns)
@@ -254,5 +260,20 @@ def includeme(config):
     apidef = RamlApiDefinition(settings['pyramid_raml.apidef_path'])
     config.registry.registerUtility(apidef, IRamlApiDefinition)
 
+
+def validate_param(param, value):
+    # FIXME: add more checks
+    if param.type == 'integer':
+        try:
+            int(value)
+        except ValueError as e:
+            raise HTTPBadRequest("Malformed parameter '{}', expected integer, got '{}'".format(param.name, value))
+    if param.type == 'string':
+        if param.enum and value not in param.enum:
+            raise HTTPBadRequest("Malformed parameter '{}', expected one of {}, got '{}'".format(param.name, ', '.join(param.enum), value))
+        if param.pattern:
+            result = re.search(param.pattern, value)
+            if not result:
+                raise HTTPBadRequest("Malformed parameter '{}', expected pattern {}, got '{}'".format(param.name, param.pattern, value))
 
 __all__ = ['api_method', 'api_service']
