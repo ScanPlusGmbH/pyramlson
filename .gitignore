@@ -17,7 +17,6 @@ coverage*.xml
 *.tox
 env*/
 dist
-data
 build
 docs/output
 docs/_build
