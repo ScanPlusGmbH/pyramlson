@@ -1,0 +1,44 @@
+#%RAML 0.8
+title: Test Errors API
+version: v1
+baseUri: http://{apiUri}/api/{version}
+mediaType: application/json
+protocols: [ HTTP ]
+/foo:
+  get:
+      description: Get foo
+      responses:
+        200:
+          body:
+            application/json: !!null
+        500:
+          body:
+            application/json: !!null
+/bar:
+  get:
+      description: Get bar
+      responses:
+        200:
+          body:
+            application/json: !!null
+        501:
+          body:
+            application/json: !!null
+/one/{two}/{three}:
+  displayName: Multiple required uri params
+  uriParameters:
+    one:
+      displayName: One
+      type: integer
+    two:
+      displayName: Two
+      type: integer
+  get:
+      description: Get bar
+      responses:
+        200:
+          body:
+            application/json: !!null
+        501:
+          body:
+            application/json: !!null
