@@ -55,9 +55,9 @@ class ResourceFunctionalTests(unittest.TestCase):
 
     def test_get_general_error(self):
         app = self.testapp
-        r = app.get('/api/v1/books/zzz', status=500)
+        r = app.get('/api/v1/books/zzz', status=400)
         assert r.json_body['success'] == False
-        assert r.json_body['message'] == "invalid literal for int() with base 10: 'zzz'"
+        assert r.json_body['message'] == "Malformed parameter 'bookId', expected integer, got 'zzz'"
 
     def test_json_validation_error(self):
         app = self.testapp
