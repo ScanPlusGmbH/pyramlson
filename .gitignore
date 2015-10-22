@@ -1,5 +1,7 @@
 .coverage
 __pycache__
+.eggs
+.cache
 *.pyc
 *.swp
 nosetests*.xml
