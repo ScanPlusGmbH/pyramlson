@@ -29,7 +29,7 @@ def find_matching_body(request, resource):
 
 def prepare_body(request, resource):
     if not request.body:
-        raise HTTPBadRequest(u"Empty body!".format(request.body))
+        raise HTTPBadRequest(u"Empty body!")
     body = find_matching_body(request, resource)
     converter = SUPPORTED_CONVERTERS[body.mime_type]
     return converter(body, request)
