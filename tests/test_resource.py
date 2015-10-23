@@ -71,7 +71,7 @@ class ResourceFunctionalTests(unittest.TestCase):
             status=400,
             content_type='application/json')
         assert r.json_body['success'] == False
-        assert r.json_body['message'] == "Invalid JSON body: b'{'"
+        assert str(r.json_body['message']).startswith("Invalid JSON body:")
 
         book_id = 10
         fake_book = {'author': 'Blah'}
