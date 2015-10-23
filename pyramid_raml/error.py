@@ -1,12 +1,17 @@
+import logging
 import traceback
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import unauthenticated_userid
+
+
+log = logging.getLogger(__name__)
 
 
 def err_dict(message):
     return dict(success=False, message=message)
 
 def generic(context, request):
+    log.error("error.generic -- context: \"{}\"".format(context))
     request.response.status_int = 500
     try:
         response = err_dict(context.args[0])
@@ -19,6 +24,7 @@ def generic(context, request):
 
 
 def http_error(context, request):
+    log.info("error.http_error -- context: \"{}\"".format(context))
     request.response.status = context.status
     for (header, value) in context.headers.items():
         if header in {'Content-Type', 'Content-Length'}:
@@ -31,6 +37,7 @@ def http_error(context, request):
 
 
 def notfound(context, request):
+    log.info("error.notfound -- context: \"{}\"".format(context))
     message = 'Resource not found'
     if isinstance(context, HTTPNotFound):
         if context.content_type == 'application/json':
@@ -42,6 +49,7 @@ def notfound(context, request):
 
 
 def forbidden(request):
+    log.info("error.forbidden")
     if unauthenticated_userid(request):
         request.response.status_int = 403
         return err_dict('You are not allowed to perform this action.')
