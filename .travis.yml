@@ -8,10 +8,8 @@ env:
   - TOXENV=py33
   - TOXENV=py34
   - TOXENV=pypy
-  - TOXENV=py2-docs
-  - TOXENV=py3-docs
-  - TOXENV=py2-cover,py3-cover,coverage
-  - TOXENV=pep8
+  - TOXENV=py2-cover
+  - TOXENV=py3-cover
 
 install:
   - travis_retry pip install tox
