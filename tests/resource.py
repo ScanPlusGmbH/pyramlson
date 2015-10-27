@@ -52,13 +52,26 @@ class BooksResource(object):
     def get_all(self, sort_by='id', sort_reversed=False, offset=0, limit=10):
         return list(BOOKS.values())
 
-    @api_method('get', permission='view', subpath='/{bookId}', raises=(BookNotFound,))
+
+@api_service('/books/{bookId}')
+class BookResource(object):
+
+    __acl__ = [
+        (Allow, 'api-user-reader', ('view', )),
+        (Allow, 'api-user-writer', ('view', 'create', 'update')),
+        (Allow, 'admin', ALL_PERMISSIONS),
+        DENY_ALL,
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    @api_method('get', permission='view', raises=(BookNotFound,))
     def get_one(self, book_id):
         return get_book(book_id)
 
     @api_method('put',
             permission='update',
-            subpath='/{bookId}',
             raises=(BookNotFound,),
             returns=200)
     def update(self, book_id, data):
@@ -68,13 +81,19 @@ class BooksResource(object):
 
     @api_method('delete',
             permission='delete',
-            subpath='/{bookId}',
             raises=(BookNotFound,),
             returns=204)
     def delete(self, book_id):
         book = get_book(book_id)
         BOOKS.pop(book["id"])
 
-    @api_method('get', subpath='/some/other/things')
+
+@api_service('/books/some/other/things')
+class SomeOtherThings(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @api_method('get')
     def things(self, thing_type=None):
         return dict(thing_type=thing_type)

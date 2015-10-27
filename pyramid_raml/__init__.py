@@ -32,14 +32,13 @@ DEFAULT_METHOD_MAP = {
 MethodRestConfig = namedtuple('MethodRestConfig', [
     'http_method',
     'permission',
-    'subpath',
     'raises',
     'returns'
 ])
 
 class api_method(object):
 
-    def __init__(self, http_method, permission=None, subpath='', raises=None, returns=None):
+    def __init__(self, http_method, permission=None, raises=None, returns=None):
         """Configure a resource method corresponding with a RAML resource path
 
         This decorator must be used to declare REST resources.
@@ -47,11 +46,6 @@ class api_method(object):
         :param http_method: The HTTP method this method maps to.
 
         :param permission: Permission for this method.
-
-        :param subpath: The subpath of the resource this method is responsible for.
-
-            If no subpath is configured, the method is called for the main path
-            of the resource.
 
         :param raises: A list containing all possible exceptions.
 
@@ -71,14 +65,12 @@ class api_method(object):
         """
         self.http_method = http_method
         self.permission = permission
-        self.subpath = subpath
         self.raises = raises if raises is not None else tuple()
         self.returns = returns if returns is not None else DEFAULT_METHOD_MAP[self.http_method]
 
     def __call__(self, method):
         method._rest_config = MethodRestConfig(self.http_method,
                 self.permission,
-                self.subpath,
                 self.raises,
                 self.returns)
         return method
@@ -105,7 +97,6 @@ class api_service(object):
 
     def create_routes(self, config):
         log.debug("Creating routes for {}".format(self.resource_path))
-        self.routes = []
         supported_methods = defaultdict(set)
         apidef = config.registry.queryUtility(IRamlApiDefinition)
         for resource in apidef.get_resources(self.resource_path):
@@ -212,7 +203,7 @@ class api_service(object):
             if not hasattr(member, '_rest_config'):
                 continue
             cfg = member._rest_config
-            if cfg.subpath == rel_path and (cfg.http_method.lower() == http_method) and callable(member):
+            if (cfg.http_method.lower() == http_method) and callable(member):
                 return (member, cfg)
         return (None, None)
 

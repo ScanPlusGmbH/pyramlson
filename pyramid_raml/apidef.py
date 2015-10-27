@@ -43,10 +43,12 @@ class RamlApiDefinition(object):
                     self.__traits_cache[name] = trait
         return self.__traits_cache.get(name)
 
-    def get_resources(self, prefix=None):
-        if not prefix:
+    def get_resources(self, path=None):
+        """ Get resources.
+        """
+        if not path:
             return self.raml.resources
-        return (res for res in self.raml.resources if res.path.startswith(prefix))
+        return (res for res in self.raml.resources if res.path == path)
 
     def get_schema_def(self, name):
         for schemas in self.raml.schemas:
