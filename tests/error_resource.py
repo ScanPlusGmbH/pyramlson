@@ -10,6 +10,13 @@ class ErrorsResource(object):
     def get(self):
         raise Exception()
 
-    @api_method('get', subpath='/{one}/{two}')
+
+@api_service('/foo/{one}/{two}')
+class ErrorsOneTwoResource(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @api_method('get')
     def foo(self, one, two):
         return dict(one=one, two=two)
