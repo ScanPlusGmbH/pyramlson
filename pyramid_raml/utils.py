@@ -108,7 +108,11 @@ def render_view(request, resource, data, status_code):
     state = RendererState(schema, data, validate)
     response = request.response
     response.status_int = status_code
-    return render_to_response(renderer, state, request=request)
+    try:
+        return render_to_response(renderer, state, request=request, response=response)
+    except TypeError as e:
+        # 1.5.7 compat
+        return render_to_response(renderer, state, request=request)
 
 SUPPORTED_RENDERERS = {
     'application/json': 'validating_json',
