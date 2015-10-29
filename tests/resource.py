@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import (
     Allow,
     ALL_PERMISSIONS,
@@ -26,8 +27,8 @@ def get_book(book_id):
         raise BookNotFound("Book with id {} could not be found.".format(book_id))
     return BOOKS[bid]
 
-class BookNotFound(Exception):
-    code = 404
+class BookNotFound(HTTPNotFound):
+    pass
 
 @api_service('/books')
 class BooksResource(object):
@@ -66,13 +67,12 @@ class BookResource(object):
     def __init__(self, request):
         self.request = request
 
-    @api_method('get', permission='view', raises=(BookNotFound,))
+    @api_method('get', permission='view')
     def get_one(self, book_id):
         return get_book(book_id)
 
     @api_method('put',
             permission='update',
-            raises=(BookNotFound,),
             returns=200)
     def update(self, book_id, data):
         book = get_book(book_id)
@@ -81,7 +81,6 @@ class BookResource(object):
 
     @api_method('delete',
             permission='delete',
-            raises=(BookNotFound,),
             returns=204)
     def delete(self, book_id):
         book = get_book(book_id)
