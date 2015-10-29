@@ -32,13 +32,12 @@ DEFAULT_METHOD_MAP = {
 MethodRestConfig = namedtuple('MethodRestConfig', [
     'http_method',
     'permission',
-    'raises',
     'returns'
 ])
 
 class api_method(object):
 
-    def __init__(self, http_method, permission=None, raises=None, returns=None):
+    def __init__(self, http_method, permission=None, returns=None):
         """Configure a resource method corresponding with a RAML resource path
 
         This decorator must be used to declare REST resources.
@@ -46,13 +45,6 @@ class api_method(object):
         :param http_method: The HTTP method this method maps to.
 
         :param permission: Permission for this method.
-
-        :param raises: A list containing all possible exceptions.
-
-            The list must contain all possible exceptions this method can raise.
-            The exceptions MUST have a 'code' property that corresponds to a
-            HTTP response code as described in the resource 'responses' map in
-            the RAML specification.
 
         :param returns: A custom HTTP code to return in case of success.
 
@@ -65,13 +57,11 @@ class api_method(object):
         """
         self.http_method = http_method
         self.permission = permission
-        self.raises = raises if raises is not None else tuple()
         self.returns = returns if returns is not None else DEFAULT_METHOD_MAP[self.http_method]
 
     def __call__(self, method):
         method._rest_config = MethodRestConfig(self.http_method,
                 self.permission,
-                self.raises,
                 self.returns)
         return method
 
@@ -178,20 +168,8 @@ class api_service(object):
                         raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
                     else:
                         optional_params[param.name] = param_value
-            try:
-                result = meth(*required_params, **optional_params)
-                return render_view(request, resource, result, cfg.returns)
-            except Exception as exc:
-                code = getattr(exc, 'code', None)
-                if code is None:
-                    raise exc
-                if cfg.raises:
-                    for err in cfg.raises:
-                        if err.code == code:
-                            request.response.status_int = code
-                            data = dict(success=False, message=str(exc))
-                            return render_view(request, resource, data, code)
-                raise exc
+            result = meth(*required_params, **optional_params)
+            return render_view(request, resource, result, cfg.returns)
 
         return (view, cfg.permission)
 
