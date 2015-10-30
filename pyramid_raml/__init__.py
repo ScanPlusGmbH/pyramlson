@@ -81,50 +81,52 @@ class api_service(object):
     def callback(self, scanner, name, cls):
         config = scanner.config.with_package(self.module)
         apidef = config.registry.queryUtility(IRamlApiDefinition)
-        self.create_routes(config)
+        self.create_route(config)
         log.debug("registered routes with base route '{}'".format(apidef.base_path))
         self.create_views(config)
 
-    def create_routes(self, config):
-        log.debug("Creating routes for {}".format(self.resource_path))
-        supported_methods = defaultdict(set)
+    def create_route(self, config):
+        log.debug("Creating route for {}".format(self.resource_path))
+        supported_methods = []
         apidef = config.registry.queryUtility(IRamlApiDefinition)
+        route_name = None
+
+        # Find all methods for this resource path
         for resource in apidef.get_resources(self.resource_path):
+            if route_name is None:
+                path = self.resource_path
+                if apidef.base_path:
+                    path = "{}{}".format(apidef.base_path, path)
+                route_name = "{}-{}".format(resource.display_name, path)
+
             method = resource.method.upper()
-            path = resource.path
-            if apidef.base_path:
-                path = "{}{}".format(apidef.base_path, resource.path)
-            supported_methods[path].add(method)
-            log.debug("Registering route with path {}, method {}".format(path, method))
-            route_name = "{}-{}-{}".format(resource.display_name, method, path)
-            config.add_route(route_name, path, factory=self.cls, request_method=method)
             self.resources.append((route_name, method, resource, None))
-        # add a default OPTIONS route if none was defined by the resource
-        opts_meth = 'OPTIONS'
-        for path in supported_methods:
-            if opts_meth not in supported_methods[path]:
-                log.debug("Registering OPTIONS route for {}".format(path))
-                route_name = "{}-{}-{}".format(resource.display_name, opts_meth, path)
-                config.add_route(route_name, path, factory=self.cls, request_method=opts_meth)
-                methods = list(supported_methods[path]) + [opts_meth]
-                self.resources.append((route_name, opts_meth, resource, create_options_view(methods)))
+            supported_methods.append(method)
+
+        # Add one route for all the methods at this resource path
+        if supported_methods:
+            log.debug("Registering route with path {}".format(path))
+            config.add_route(route_name, path, factory=self.cls)
+            # add a default OPTIONS view if none was defined by the resource
+            opts_meth = 'OPTIONS'
+            if opts_meth not in supported_methods:
+                methods = supported_methods + [opts_meth]
+                self.resources.append((route_name, 'OPTIONS', resource, create_options_view(methods)))
 
     def create_views(self, config):
         for (route_name, method, resource, default_view) in self.resources:
-            log.debug("Creating view {}".format(route_name))
+            log.debug("Creating view {} {}".format(route_name, method))
             if default_view:
                 config.add_view(default_view,
                     route_name=route_name,
-                    context=self.cls,
                     request_method=method)
-                continue
-            (view, permission) = self.create_view(resource)
-            log.debug("Registering view {} for route name '{}', resource {}".format(view, route_name, resource))
-            config.add_view(view,
-                    route_name=route_name,
-                    context=self.cls,
-                    request_method=method,
-                    permission=permission)
+            else:
+                (view, permission) = self.create_view(resource)
+                log.debug("Registering view {} for route name '{}', resource '{}', method '{}'".format(view, route_name, resource, method))
+                config.add_view(view,
+                        route_name=route_name,
+                        request_method=method,
+                        permission=permission)
 
     def __call__(self, cls):
         self.cls = cls
