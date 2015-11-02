@@ -8,7 +8,7 @@ from lxml import etree
 
 try:
     from urllib.parse import urlparse
-except ImportError:
+except ImportError: # pragma: no cover
     from urlparse import urlparse
 
 log = logging.getLogger(__name__)
@@ -25,9 +25,9 @@ class RamlApiDefinition(object):
     def __init__(self, apidef_path):
         self.raml = ramlfications.parse(apidef_path)
         self.base_uri = self.raml.base_uri
+        if self.base_uri.endswith('/'):
+            self.base_uri = self.base_uri[:-1]
         self.base_path = urlparse(self.base_uri).path
-        if self.base_path.endswith('/'):
-            self.base_path = self.base_path[:-1]
 
     @property
     def default_mime_type(self):
