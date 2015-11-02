@@ -12,7 +12,6 @@ from pyramid.httpexceptions import (
     HTTPNoContent,
 )
 from pyramid.interfaces import IExceptionResponse
-from pyramid.renderers import render_to_response
 
 from .apidef import IRamlApiDefinition
 from .utils import prepare_body, render_view
@@ -209,10 +208,6 @@ def includeme(config):
        config.include('pyramid_raml')
     """
     from pyramid_raml.apidef import RamlApiDefinition, IRamlApiDefinition
-    from pyramid_raml.renderers import (
-        ValidatingXmlRenderer,
-        ValidatingJsonRenderer
-    )
     settings = config.registry.settings
     settings['pyramid_raml.debug'] = \
             settings.get('debug_all') or \
@@ -222,9 +217,6 @@ def includeme(config):
     config.add_view('pyramid_raml.error.http_error', context=IExceptionResponse, renderer='json')
     config.add_notfound_view('pyramid_raml.error.notfound', renderer='json')
     config.add_forbidden_view('pyramid_raml.error.forbidden', renderer='json')
-
-    config.add_renderer('validating_xml', ValidatingXmlRenderer())
-    config.add_renderer('validating_json', ValidatingJsonRenderer())
 
     if 'pyramid_raml.apidef_path' not in settings:
         raise ValueError("Cannot create RamlApiDefinition without a RAML file.")

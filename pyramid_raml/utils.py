@@ -1,14 +1,13 @@
 import logging
 import jsonschema
-import xmltodict
 
 from lxml import etree
 from lxml.etree import XMLSyntaxError, DocumentInvalid
+
 from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.renderers import render_to_response
 
 from .apidef import IRamlApiDefinition
-from .renderers import RendererState
 
 
 log = logging.getLogger(__name__)
@@ -34,7 +33,9 @@ def prepare_body(request, resource):
     converter = SUPPORTED_CONVERTERS[body.mime_type]
     return converter(body, request)
 
+
 def prepare_json_body(body, request):
+    """ connvert request body to json and validate it """
     try:
         data = request.json_body
     except ValueError as e:
@@ -48,7 +49,9 @@ def prepare_json_body(body, request):
             raise HTTPBadRequest(str(e))
     return data
 
+
 def prepare_xml_body(body, request):
+    """ convert request body to lxml etree and validate it """
     xml = request.body
     apidef = request.registry.queryUtility(IRamlApiDefinition)
     try:
@@ -66,6 +69,8 @@ def prepare_xml_body(body, request):
 
 SUPPORTED_CONVERTERS = {
     'application/json': prepare_json_body,
+    'text/json': prepare_json_body,
+    'application/xml': prepare_xml_body,
     'text/xml': prepare_xml_body,
 }
 
@@ -101,21 +106,15 @@ def get_renderer(request, resource, status_code):
 
 def render_view(request, resource, data, status_code):
     """Render data to response using matching renderer"""
-    validate = request.registry.settings.get('pyramid_raml.validate_response', '')
-    # validate = validate.lower() in ('true', 'yes')
-    validate = True
     (schema, renderer) = get_renderer(request, resource, status_code)
-    state = RendererState(schema, data, validate)
     response = request.response
     response.status_int = status_code
     try:
-        return render_to_response(renderer, state, request=request, response=response)
+        return render_to_response(renderer, data, request=request, response=response)
     except TypeError as e:
         # 1.5.7 compat
-        return render_to_response(renderer, state, request=request)
+        return render_to_response(renderer, data, request=request)
 
 SUPPORTED_RENDERERS = {
-    'application/json': 'validating_json',
-    'text/xml': 'validating_xml',
-    'application/xml': 'validating_xml',
+    'application/json': 'json',
 }
