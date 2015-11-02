@@ -105,7 +105,7 @@ class api_service(object):
         # Add one route for all the methods at this resource path
         if supported_methods:
             log.debug("Registering route with path {}".format(path))
-            config.add_route(route_name, path)
+            config.add_route(route_name, path, factory=self.cls)
             # add a default OPTIONS view if none was defined by the resource
             opts_meth = 'OPTIONS'
             if opts_meth not in supported_methods:
