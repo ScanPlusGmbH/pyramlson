@@ -29,11 +29,6 @@ class ResourceFunctionalTests(unittest.TestCase):
         r = self.testapp.get('/api/v1/books', status=200)
         assert r.json_body == list(BOOKS.values())
 
-    # FIXME: xml serialization & validation sucks
-    #def test_get_list_xml(self):
-    #    r = self.testapp.get('/api/v1/books', headers={'Accept': 'application/xml'}, status=200)
-    #    assert r.body == b'<?xml version="1.0" encoding="UTF-8" ?><root><item><author>Frank Herbert</author><title>Dune</title><id>123</id><isbn>98765</isbn></item><item><author>Dan Simmons</author><title>Hyperion Cantos</title><id>456</id><isbn>56789</isbn></item></root>'
-
     def test_get_one(self):
         app = self.testapp
         r = app.get('/api/v1/books/123', status=200)
