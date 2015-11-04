@@ -82,7 +82,7 @@ class ResourceFunctionalTests(unittest.TestCase):
             status=400,
             content_type='text/plain')
         assert r.json_body['success'] == False
-        assert "Invalid JSON body: b'hi there'" in r.json_body['message']
+        assert "Invalid JSON body:" in r.json_body['message']
 
     def test_succesful_json_put(self):
         app = self.testapp
