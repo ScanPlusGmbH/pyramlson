@@ -1,4 +1,4 @@
-from pyramid_raml import api_service, api_method
+from pyramlson import api_service, api_method
 
 @api_service('/books')
 class BadResource(object):

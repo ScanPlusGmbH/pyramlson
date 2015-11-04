@@ -4,7 +4,7 @@ import unittest
 
 from pyramid import testing
 
-from pyramid_raml import apidef
+from pyramlson import apidef
 
 from .base import DATA_DIR
 
@@ -64,7 +64,7 @@ def test_empty_traits():
 
 class TestMissingRaml(unittest.TestCase):
     def test_missing_raml(self):
-        # not providing a path to RAML specs file in settings['pyramid_raml.apidef_path']
+        # not providing a path to RAML specs file in settings['pyramlson.apidef_path']
         # must raise a ValueError
         config = testing.setUp()
-        self.assertRaises(ValueError, config.include, 'pyramid_raml')
+        self.assertRaises(ValueError, config.include, 'pyramlson')

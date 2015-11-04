@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from lxml import objectify
+
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import (
     Allow,
@@ -6,7 +8,25 @@ from pyramid.security import (
     DENY_ALL,
 )
 
-from pyramid_raml import api_service, api_method
+from pyramlson import api_service, api_method
+
+
+class Book(object):
+    """ A simcple book class """
+
+    def __init__(self, id, title, author, isbn=None):
+        self.id = id
+        self.title = title
+        self.author = author
+        selfisbn = isbn
+
+    @classmethod
+    def from_dict(klass, id, data):
+        return klass(id, data['title'], data['author'], data.get('isbn', None))
+
+    @classmethod
+    def from_etree(klass, id, tree):
+        return klass(id, data['title'], data['author'], data.get('isbn', None))
 
 BOOKS = OrderedDict()
 BOOKS[123] = {"id": 123,

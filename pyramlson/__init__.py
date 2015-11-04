@@ -205,22 +205,22 @@ def includeme(config):
     .. code-block:: python
        :linenos:
        config = Configurator()
-       config.include('pyramid_raml')
+       config.include('pyramlson')
     """
-    from pyramid_raml.apidef import RamlApiDefinition, IRamlApiDefinition
+    from pyramlson.apidef import RamlApiDefinition, IRamlApiDefinition
     settings = config.registry.settings
-    settings['pyramid_raml.debug'] = \
+    settings['pyramlson.debug'] = \
             settings.get('debug_all') or \
             settings.get('pyramid.debug_all') or \
-            settings.get('pyramid_raml.debug')
-    config.add_view('pyramid_raml.error.generic', context=Exception, renderer='json')
-    config.add_view('pyramid_raml.error.http_error', context=IExceptionResponse, renderer='json')
-    config.add_notfound_view('pyramid_raml.error.notfound', renderer='json')
-    config.add_forbidden_view('pyramid_raml.error.forbidden', renderer='json')
+            settings.get('pyramlson.debug')
+    config.add_view('pyramlson.error.generic', context=Exception, renderer='json')
+    config.add_view('pyramlson.error.http_error', context=IExceptionResponse, renderer='json')
+    config.add_notfound_view('pyramlson.error.notfound', renderer='json')
+    config.add_forbidden_view('pyramlson.error.forbidden', renderer='json')
 
-    if 'pyramid_raml.apidef_path' not in settings:
+    if 'pyramlson.apidef_path' not in settings:
         raise ValueError("Cannot create RamlApiDefinition without a RAML file.")
-    apidef = RamlApiDefinition(settings['pyramid_raml.apidef_path'])
+    apidef = RamlApiDefinition(settings['pyramlson.apidef_path'])
     config.registry.registerUtility(apidef, IRamlApiDefinition)
 
 

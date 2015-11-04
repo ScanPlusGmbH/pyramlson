@@ -25,9 +25,9 @@ testing_extras = tests_require + [
     'coverage',
 ]
 
-setup(name='pyramid_raml',
+setup(name='pyramlson',
     version='1.0.0',
-    description='pyramid_raml',
+    description='pyramlson',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
         "Programming Language :: Python",
@@ -40,8 +40,8 @@ setup(name='pyramid_raml',
     ],
     author='Igor Stroh',
     author_email='igor.stroh@rulim.de',
-    url='http://github.com/jenner/pyramid_raml',
-    keywords='web pyramid api',
+    url='http://github.com/jenner/pyramlson',
+    keywords='web pyramid api json',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
@@ -50,5 +50,5 @@ setup(name='pyramid_raml',
     extras_require = {
         'testing': testing_extras,
     },
-    test_suite="pyramid_raml",
+    test_suite="pyramlson",
 )

@@ -25,13 +25,13 @@ class ErrorsTests(unittest.TestCase):
 
     def setUp(self):
         settings = {
-            'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
+            'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
         }
         auth_policy = BasicAuthAuthenticationPolicy(dummy_check, 'TEST REALM')
         self.config = testing.setUp(settings=settings)
         self.config.set_authorization_policy(ACLAuthorizationPolicy())
         self.config.set_authentication_policy(auth_policy)
-        self.config.include('pyramid_raml')
+        self.config.include('pyramlson')
         self.config.scan('.resource')
         from webtest import TestApp
         self.testapp = TestApp(self.config.make_wsgi_app())
@@ -58,11 +58,11 @@ class ErrorsTests(unittest.TestCase):
 class ErrorsWithDebugTests(unittest.TestCase):
     def setUp(self):
         settings = {
-            'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-errors-api.raml'),
-            'pyramid_raml.debug': 'true',
+            'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-errors-api.raml'),
+            'pyramlson.debug': 'true',
         }
         self.config = testing.setUp(settings=settings)
-        self.config.include('pyramid_raml')
+        self.config.include('pyramlson')
         self.config.scan('.error_resource')
         from webtest import TestApp
         self.testapp = TestApp(self.config.make_wsgi_app())
@@ -75,11 +75,11 @@ class ErrorsWithDebugTests(unittest.TestCase):
 class UnknownErrorTests(unittest.TestCase):
     def setUp(self):
         settings = {
-            'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-errors-api.raml'),
-            'pyramid_raml.debug': 'true',
+            'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-errors-api.raml'),
+            'pyramlson.debug': 'true',
         }
         self.config = testing.setUp(settings=settings)
-        self.config.include('pyramid_raml')
+        self.config.include('pyramlson')
         self.config.scan('.error_resource')
         from webtest import TestApp
         self.testapp = TestApp(self.config.make_wsgi_app())

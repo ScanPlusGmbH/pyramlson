@@ -12,14 +12,15 @@ def err_dict(message):
 
 def generic(context, request):
     log.error("error.generic -- context: \"{}\"".format(context))
+    tb = ''.join(traceback.format_exception(*request.exc_info))
+    log.error("error.generic -- traceback: \"{}\"".format(tb))
     request.response.status_int = 500
     try:
         response = err_dict(context.args[0])
     except IndexError:
         response = err_dict('Unknown error')
-    if request.registry.settings.get('pyramid_raml.debug'):
-        response['traceback'] = ''.join(
-                traceback.format_exception(*request.exc_info))
+    if request.registry.settings.get('pyramlson.debug'):
+        response['traceback'] = tb
     return response
 
 

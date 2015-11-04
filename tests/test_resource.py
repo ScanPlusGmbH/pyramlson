@@ -8,16 +8,25 @@ from pyramid.config import Configurator
 from .base import DATA_DIR
 from .resource import BOOKS
 
+BOOK_XML_TMPL = """\
+<?xml version="1.0" encoding="utf-8"?>
+<book id="{}">
+  <author>Foo</author>
+  <title>Blah</title>
+  <isbn>123456789</isbn>
+</book>
+"""
+
 
 class ResourceFunctionalTests(unittest.TestCase):
 
     def setUp(self):
         settings = {
-            'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
-            'pyramid_raml.debug': 'true',
+            'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
+            'pyramlson.debug': 'true',
         }
         self.config = testing.setUp(settings=settings)
-        self.config.include('pyramid_raml')
+        self.config.include('pyramlson')
         self.config.scan('.resource')
         from webtest import TestApp
         self.testapp = TestApp(self.config.make_wsgi_app())
@@ -84,11 +93,21 @@ class ResourceFunctionalTests(unittest.TestCase):
         assert r.json_body['success'] == False
         assert "Unsupported body content-type: 'text/plain'" in r.json_body['message']
 
-    def test_succesful_put(self):
+    def test_succesful_json_put(self):
         app = self.testapp
         book_id = 123
         fake_book = {'id': book_id, 'title': 'Foo', 'author': 'Blah'}
         r = app.put_json('/api/v1/books/{}'.format(book_id), params=fake_book, status=200)
+        assert r.json_body['success'] == True
+
+    def test_succesful_xml_put(self):
+        app = self.testapp
+        book_id = 123
+        fake_book_xml = BOOK_XML_TMPL.format(book_id)
+        r = app.put('/api/v1/books/{}'.format(book_id),
+            params=fake_book_xml,
+            content_type='application/xml',
+            status=200)
         assert r.json_body['success'] == True
 
     def test_default_options(self):
@@ -115,10 +134,10 @@ class NoMatchingResourceMethodTests(unittest.TestCase):
 
     def setUp(self):
         settings = {
-            'pyramid_raml.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
+            'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
         }
         self.config = testing.setUp(settings=settings)
 
     def test_valueerror(self):
-        self.config.include('pyramid_raml')
+        self.config.include('pyramlson')
         self.assertRaises(ValueError, self.config.scan, '.bad_resource')
