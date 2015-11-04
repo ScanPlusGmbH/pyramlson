@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from lxml import objectify
 
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.security import (

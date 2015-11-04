@@ -7,8 +7,6 @@ protocols: [ HTTP ]
 schemas:
   - BookRecordJson: !include schemas/BookRecord.json
   - BookRecordListJson: !include schemas/BookRecordList.json
-  - BookRecordXml: !include schemas/BookRecord.xsd
-  - BookRecordListXml: !include schemas/BookRecordList.xsd
   - CommonResponseObject: |
       {
         "type": "object",
@@ -101,17 +99,6 @@ traits:
                 "author": "J. D. Salinger",
                 "isbn": "54321"
               }]
-          application/xml:
-            schema: BookRecordListXml
-            example: | 
-              <?xml version="1.0" encoding="UTF-8"?>
-              <books>
-                  <book id="123">
-                      <author>Foo</author>
-                      <title>Bar</title>
-                      <isbn>afsd</isbn>
-                  </book>
-              </books>
   /{bookId}:
     displayName: Get or update a book by id
     uriParameters:
@@ -153,8 +140,6 @@ traits:
               "author": "J. D. Salinger",
               "isbn": "54321"
             }
-        application/xml:
-          schema: BookRecordXml
       responses:
         200:
           description: A book was successfully updated

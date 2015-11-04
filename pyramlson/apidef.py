@@ -1,10 +1,8 @@
 import logging
 import ramlfications
-import xmltodict
 
 from collections import OrderedDict
 from zope.interface import Interface
-from lxml import etree
 
 try:
     from urllib.parse import urlparse
@@ -56,19 +54,15 @@ class RamlApiDefinition(object):
                 return schemas[name]
 
     def get_schema(self, body, mime_type):
+        if isinstance(body, list):
+            bodies = body
+            for body in bodies:
+                if body.mime_type == 'application/json':
+                    break
         if not body or not body.schema:
             return None
         schema = body.schema
-        if mime_type == 'application/json':
-            # FIXME there should be a better way to detect an inline schema
-            if '$schema' not in schema:
-                schema = self.get_schema_def(schema)
-            return schema
-        elif mime_type in ('text/xml', 'application/xml'):
-            if '<xsd:schema' not in schema:
-                schema = self.get_schema_def(schema)
-            if not schema:
-                return None
-            if isinstance(schema, OrderedDict):
-                schema = bytes(xmltodict.unparse(schema), 'UTF-8')
-            return etree.XMLSchema(etree.fromstring(schema))
+        # FIXME there should be a better way to detect an inline schema
+        if '$schema' not in schema:
+            schema = self.get_schema_def(schema)
+        return schema

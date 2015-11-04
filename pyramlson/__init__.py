@@ -14,7 +14,7 @@ from pyramid.httpexceptions import (
 from pyramid.interfaces import IExceptionResponse
 
 from .apidef import IRamlApiDefinition
-from .utils import prepare_body, render_view
+from .utils import prepare_json_body, render_view
 
 log = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ class api_service(object):
                     required_params.append(param_value)
             # If there's a body defined - include it before traits or query params
             if resource.body:
-                required_params.append(prepare_body(request, resource))
+                required_params.append(prepare_json_body(request, resource.body))
             # FIXME: handle traits
             #for (name, trait) in self.apidef.get_resource_traits(resource).items():
             if resource.query_params:
@@ -170,7 +170,7 @@ class api_service(object):
                     else:
                         optional_params[param.name] = param_value
             result = meth(*required_params, **optional_params)
-            return render_view(request, resource, result, cfg.returns)
+            return render_view(request, result, cfg.returns)
 
         return (view, cfg.permission)
 
