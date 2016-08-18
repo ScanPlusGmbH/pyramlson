@@ -34,6 +34,9 @@ MethodRestConfig = namedtuple('MethodRestConfig', [
     'returns'
 ])
 
+
+MARKER = object()
+
 class api_method(object):
 
     def __init__(self, http_method, permission=None, returns=None):
@@ -154,13 +157,13 @@ class api_service(object):
             # If there's a body defined - include it before traits or query params
             if resource.body:
                 required_params.append(prepare_json_body(request, resource.body))
-            # FIXME: handle traits
-            #for (name, trait) in self.apidef.get_resource_traits(resource).items():
             if resource.query_params:
                 for param in resource.query_params:
-                    param_value = request.params.get(param.name, param.default)
-                    if param_value:
+                    param_value = request.params.get(param.name, MARKER)
+                    if param_value is not MARKER:
                         validate_param(param, param_value)
+                    else:
+                        param_value = param.default
                     # query params are always named (i.e. not positional)
                     # so they effectively become keyword agruments in a
                     # method call, we just make sure they are present
@@ -238,5 +241,18 @@ def validate_param(param, value):
             result = re.search(param.pattern, value)
             if not result:
                 raise HTTPBadRequest("Malformed parameter '{}', expected pattern {}, got '{}'".format(param.name, param.pattern, value))
-
+        if param.min_length and len(value) < param.min_length:
+            msg = "Malformed parameter '{}', expected minimum length is {}, got {}"
+            raise HTTPBadRequest(msg.format(
+                param.name,
+                param.min_length,
+                len(value)
+            ))
+        if param.max_length and len(value) > param.max_length:
+            msg = "Malformed parameter '{}', expected maximum length is {}, got {}"
+            raise HTTPBadRequest(msg.format(
+                param.name,
+                param.max_length,
+                len(value)
+            ))
 __all__ = ['api_method', 'api_service']
