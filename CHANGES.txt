@@ -1,4 +1,9 @@
-0.0
----
+1.1.0
+-----
+- Added max_length / min_length checks for URI and query parameters
+- Added package-relative resolution of api definition path
+
+1.0.0
+-----
 
 -  Initial version

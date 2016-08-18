@@ -24,7 +24,7 @@ testing_extras = tests_require + [
 ]
 
 setup(name='pyramlson',
-    version='1.0.0',
+    version='1.1.0',
     description='pyramlson',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
