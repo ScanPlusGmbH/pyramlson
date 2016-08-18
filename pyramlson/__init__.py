@@ -6,6 +6,7 @@ import logging
 from inspect import getmembers
 from collections import namedtuple, defaultdict
 
+from pyramid.path import AssetResolver
 from pyramid.httpexceptions import (
     HTTPBadRequest,
     HTTPInternalServerError,
@@ -223,7 +224,9 @@ def includeme(config):
 
     if 'pyramlson.apidef_path' not in settings:
         raise ValueError("Cannot create RamlApiDefinition without a RAML file.")
-    apidef = RamlApiDefinition(settings['pyramlson.apidef_path'])
+    res = AssetResolver()
+    apidef_path = res.resolve(settings['pyramlson.apidef_path'])
+    apidef = RamlApiDefinition(apidef_path.abspath())
     config.registry.registerUtility(apidef, IRamlApiDefinition)
 
 
