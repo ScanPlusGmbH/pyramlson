@@ -11,12 +11,13 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 install_requires = [
     'pyramid',
     'jsonschema',
-    'ramlfications',
+    'ramlfications==0.1.8',
 ]
 
 tests_require = install_requires + [
     'pytest',
     'WebTest',
+    'inflection'
 ]
 testing_extras = tests_require + [
     'nose',

@@ -6,7 +6,10 @@ import logging
 from inspect import getmembers
 from collections import namedtuple, defaultdict
 
-from pyramid.path import AssetResolver
+from pyramid.path import (
+    AssetResolver,
+    DottedNameResolver
+)
 from pyramid.httpexceptions import (
     HTTPBadRequest,
     HTTPInternalServerError,
@@ -80,26 +83,26 @@ class api_service(object):
         log.debug("Resource path: {}".format(resource_path))
         self.resource_path = resource_path
         self.resources = []
+        self.apidef = None
 
     def callback(self, scanner, name, cls):
         config = scanner.config.with_package(self.module)
-        apidef = config.registry.queryUtility(IRamlApiDefinition)
+        self.apidef = config.registry.queryUtility(IRamlApiDefinition)
         self.create_route(config)
-        log.debug("registered routes with base route '{}'".format(apidef.base_path))
+        log.debug("registered routes with base route '{}'".format(self.apidef.base_path))
         self.create_views(config)
 
     def create_route(self, config):
         log.debug("Creating route for {}".format(self.resource_path))
         supported_methods = []
-        apidef = config.registry.queryUtility(IRamlApiDefinition)
         route_name = None
 
         # Find all methods for this resource path
-        for resource in apidef.get_resources(self.resource_path):
+        for resource in self.apidef.get_resources(self.resource_path):
             if route_name is None:
                 path = self.resource_path
-                if apidef.base_path:
-                    path = "{}{}".format(apidef.base_path, path)
+                if self.apidef.base_path:
+                    path = "{}{}".format(self.apidef.base_path, path)
                 route_name = "{}-{}".format(resource.display_name, path)
 
             method = resource.method.upper()
@@ -142,6 +145,8 @@ class api_service(object):
         log.debug("Got method {} for resource {}".format(meth, resource))
         if not meth:
             raise ValueError("Could not find a method in class {} suitable for resource {}.".format(self.cls, resource))
+        transform = self.apidef.args_transform_cb
+        transform = transform if callable(transform) else lambda arg: arg
         def view(context, request):
             required_params = [context]
             optional_params = dict()
@@ -172,7 +177,7 @@ class api_service(object):
                     if param.required and param.name not in request.params:
                         raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
                     else:
-                        optional_params[param.name] = param_value
+                        optional_params[transform(param.name)] = param_value
             result = meth(*required_params, **optional_params)
             return render_view(request, result, cfg.returns)
 
@@ -224,9 +229,17 @@ def includeme(config):
 
     if 'pyramlson.apidef_path' not in settings:
         raise ValueError("Cannot create RamlApiDefinition without a RAML file.")
+
+
+    args_transform_cb = None
+    if 'pyramlson.arguments_transformation_callback' in settings:
+        args_transform_cb = DottedNameResolver().maybe_resolve(
+            settings['pyramlson.arguments_transformation_callback']
+        )
+
     res = AssetResolver()
     apidef_path = res.resolve(settings['pyramlson.apidef_path'])
-    apidef = RamlApiDefinition(apidef_path.abspath())
+    apidef = RamlApiDefinition(apidef_path.abspath(), args_transform_cb=args_transform_cb)
     config.registry.registerUtility(apidef, IRamlApiDefinition)
 
 

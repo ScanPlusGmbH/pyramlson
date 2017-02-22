@@ -1,5 +1,6 @@
 import os
 import unittest
+import inflection
 
 from pyramid import testing
 
@@ -9,12 +10,16 @@ from .base import DATA_DIR
 from .resource import BOOKS
 
 
+def to_underscore(name):
+    return inflection.underscore(name)
+
 class ResourceFunctionalTests(unittest.TestCase):
 
     def setUp(self):
         settings = {
             'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
             'pyramlson.debug': 'true',
+            'pyramlson.arguments_transformation_callback': to_underscore
         }
         self.config = testing.setUp(settings=settings)
         self.config.include('pyramlson')
@@ -103,14 +108,15 @@ class ResourceFunctionalTests(unittest.TestCase):
     def test_required_uriparams(self):
         app = self.testapp
         tt = 'a'
-        r = app.get('/api/v1/books/some/other/things', params=dict(thing_type=tt), status=200)
+        r = app.get('/api/v1/books/some/other/things', params=dict(thingType=tt), status=200)
+        # note the renamed argument
         assert r.json_body['thing_type'] == tt
 
     def test_missing_required_uriparams(self):
         app = self.testapp
         tt = 'a'
         r = app.get('/api/v1/books/some/other/things', params=dict(foo='bar'), status=400)
-        assert r.json_body['message'] == 'thing_type (string) is required'
+        assert r.json_body['message'] == 'thingType (string) is required'
 
 class NoMatchingResourceMethodTests(unittest.TestCase):
 

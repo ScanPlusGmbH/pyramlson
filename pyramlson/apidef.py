@@ -20,12 +20,13 @@ class RamlApiDefinition(object):
 
     __traits_cache = {}
 
-    def __init__(self, apidef_path):
+    def __init__(self, apidef_path, args_transform_cb=None):
         self.raml = ramlfications.parse(apidef_path)
         self.base_uri = self.raml.base_uri
         if self.base_uri.endswith('/'):
             self.base_uri = self.base_uri[:-1]
         self.base_path = urlparse(self.base_uri).path
+        self.args_transform_cb = args_transform_cb
 
     @property
     def default_mime_type(self):
