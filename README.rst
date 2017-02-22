@@ -1,8 +1,8 @@
 ``pyramlson``
 ==================
 
-.. image:: https://travis-ci.org/jenner/pyramlson.png?branch=master
-   :target: https://travis-ci.org/jenner/pyramlson
+.. image:: https://travis-ci.org/ScanPlusGmbH/pyramlson.png?branch=master
+   :target: https://travis-ci.org/ScanPlusGmbH/pyramlson
 
 Build JSON REST APIs with RAML_ and Pyramid_.
 
