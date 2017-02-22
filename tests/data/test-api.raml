@@ -23,9 +23,6 @@ schemas:
           }
         }
       }
-securitySchemes:
-  - basic:
-      type: Basic Authentication
 traits:
   - sorted:
       description: A sorted collection resource
@@ -60,7 +57,6 @@ traits:
           example: 5
           default: 0
 /books:
-  securedBy: [basic]
   displayName: Books Service
   description: Get your books here!
   post:

@@ -11,7 +11,7 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 install_requires = [
     'pyramid',
     'jsonschema',
-    'ramlfications==0.1.8',
+    'ramlfications>=0.1.9',
 ]
 
 tests_require = install_requires + [
