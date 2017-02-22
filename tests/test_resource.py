@@ -10,16 +10,13 @@ from .base import DATA_DIR
 from .resource import BOOKS
 
 
-def to_underscore(name):
-    return inflection.underscore(name)
-
 class ResourceFunctionalTests(unittest.TestCase):
 
     def setUp(self):
         settings = {
             'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
             'pyramlson.debug': 'true',
-            'pyramlson.arguments_transformation_callback': to_underscore
+            'pyramlson.arguments_transformation_callback': inflection.underscore
         }
         self.config = testing.setUp(settings=settings)
         self.config.include('pyramlson')
