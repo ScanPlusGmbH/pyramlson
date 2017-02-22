@@ -1,10 +1,15 @@
+# coding: utf-8
+"""
+Main pyramlson decorators: api_service and api_method
+"""
 import re
 import os
-import venusian
 import logging
 
 from inspect import getmembers
 from collections import namedtuple, defaultdict
+
+import venusian
 
 from pyramid.path import (
     AssetResolver,
@@ -20,7 +25,7 @@ from pyramid.interfaces import IExceptionResponse
 from .apidef import IRamlApiDefinition
 from .utils import prepare_json_body, render_view
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 DEFAULT_METHOD_MAP = {
@@ -42,6 +47,7 @@ MethodRestConfig = namedtuple('MethodRestConfig', [
 MARKER = object()
 
 class api_method(object):
+    # pylint: disable=invalid-name
 
     def __init__(self, http_method, permission=None, returns=None):
         """Configure a resource method corresponding with a RAML resource path
@@ -66,9 +72,11 @@ class api_method(object):
         self.returns = returns if returns is not None else DEFAULT_METHOD_MAP[self.http_method]
 
     def __call__(self, method):
-        method._rest_config = MethodRestConfig(self.http_method,
-                self.permission,
-                self.returns)
+        method._rest_config = MethodRestConfig(
+            self.http_method,
+            self.permission,
+            self.returns
+        )
         return method
 
 
@@ -78,22 +86,25 @@ class api_service(object):
     This decorator configures a class as a REST resource. All endpoints
     must be defined in a RAML file.
     """
+    # pylint: disable=invalid-name
 
     def __init__(self, resource_path):
-        log.debug("Resource path: {}".format(resource_path))
+        LOG.debug("Resource path: %s", resource_path)
         self.resource_path = resource_path
         self.resources = []
         self.apidef = None
+        self.cls = None
+        self.module = None
 
     def callback(self, scanner, name, cls):
         config = scanner.config.with_package(self.module)
         self.apidef = config.registry.queryUtility(IRamlApiDefinition)
         self.create_route(config)
-        log.debug("registered routes with base route '{}'".format(self.apidef.base_path))
+        LOG.debug("registered routes with base route '%s'", self.apidef.base_path)
         self.create_views(config)
 
     def create_route(self, config):
-        log.debug("Creating route for {}".format(self.resource_path))
+        LOG.debug("Creating route for %s", self.resource_path)
         supported_methods = []
         route_name = None
 
@@ -111,28 +122,43 @@ class api_service(object):
 
         # Add one route for all the methods at this resource path
         if supported_methods:
-            log.debug("Registering route with path {}".format(path))
+            LOG.debug("Registering route with path %s", path)
             config.add_route(route_name, path, factory=self.cls)
             # add a default OPTIONS view if none was defined by the resource
             opts_meth = 'OPTIONS'
             if opts_meth not in supported_methods:
                 methods = supported_methods + [opts_meth]
-                self.resources.append((route_name, 'OPTIONS', resource, create_options_view(methods)))
+                self.resources.append((
+                    route_name,
+                    'OPTIONS',
+                    resource,
+                    create_options_view(methods)
+                ))
 
     def create_views(self, config):
         for (route_name, method, resource, default_view) in self.resources:
-            log.debug("Creating view {} {}".format(route_name, method))
+            LOG.debug("Creating view %s %s", route_name, method)
             if default_view:
-                config.add_view(default_view,
+                config.add_view(
+                    default_view,
                     route_name=route_name,
-                    request_method=method)
+                    request_method=method
+                )
             else:
                 (view, permission) = self.create_view(resource)
-                log.debug("Registering view {} for route name '{}', resource '{}', method '{}'".format(view, route_name, resource, method))
-                config.add_view(view,
-                        route_name=route_name,
-                        request_method=method,
-                        permission=permission)
+                LOG.debug(
+                    "Registering view %s for route name '%s', resource '%s', method '%s'",
+                    view,
+                    route_name,
+                    resource,
+                    method
+                )
+                config.add_view(
+                    view,
+                    route_name=route_name,
+                    request_method=method,
+                    permission=permission
+                )
 
     def __call__(self, cls):
         self.cls = cls
@@ -142,9 +168,13 @@ class api_service(object):
 
     def create_view(self, resource):
         (meth, cfg) = self.get_service_class_method(resource)
-        log.debug("Got method {} for resource {}".format(meth, resource))
+        LOG.debug("Got method %s for resource %s", meth, resource)
         if not meth:
-            raise ValueError("Could not find a method in class {} suitable for resource {}.".format(self.cls, resource))
+            msg = "Could not find a method in class {} suitable for resource {}.".format(
+                self.cls,
+                resource
+            )
+            raise ValueError(msg)
         transform = self.apidef.args_transform_cb
         transform = transform if callable(transform) else lambda arg: arg
         def view(context, request):
@@ -185,18 +215,19 @@ class api_service(object):
 
     def get_service_class_method(self, resource):
         rel_path = resource.path[len(self.resource_path):]
-        log.debug("Relative path for {}: '{}'".format(resource, rel_path))
+        LOG.debug("Relative path for %s: '%s'", resource, rel_path)
         http_method = resource.method.lower()
-        for (name, member) in getmembers(self.cls):
+        for (_, member) in getmembers(self.cls):
             if not hasattr(member, '_rest_config'):
                 continue
-            cfg = member._rest_config
+            cfg = member._rest_config  # pylint: disable=protected-access
             if (cfg.http_method.lower() == http_method) and callable(member):
                 return (member, cfg)
         return (None, None)
 
 def create_options_view(supported_methods):
-    def view(context, request):
+    """ Create a view callable for the OPTIONS request """
+    def view(context, request):  # pylint: disable=unused-argument,missing-docstring
         response = HTTPNoContent()
         response.headers['Access-Control-Allow-Methods'] =\
             ', '.join(supported_methods)
@@ -216,7 +247,7 @@ def includeme(config):
        config = Configurator()
        config.include('pyramlson')
     """
-    from pyramlson.apidef import RamlApiDefinition, IRamlApiDefinition
+    from pyramlson.apidef import RamlApiDefinition
     settings = config.registry.settings
     settings['pyramlson.debug'] = \
             settings.get('debug_all') or \
@@ -244,12 +275,16 @@ def includeme(config):
 
 
 def validate_param(param, value):
+    """ Validate input parameters """
     # FIXME: add more checks
     if param.type == 'integer':
         try:
             int(value)
-        except ValueError as e:
-            raise HTTPBadRequest("Malformed parameter '{}', expected integer, got '{}'".format(param.name, value))
+        except ValueError:
+            msg = "Malformed parameter '{}', expected integer, got '{}'".format(
+                param.name, value
+            )
+            raise HTTPBadRequest(msg)
     if param.type == 'string':
         if param.enum and value not in param.enum:
             raise HTTPBadRequest("Malformed parameter '{}', expected one of {}, got '{}'".format(param.name, ', '.join(param.enum), value))

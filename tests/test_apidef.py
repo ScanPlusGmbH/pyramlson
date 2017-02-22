@@ -34,12 +34,12 @@ def test_all_resources():
 
 def test_schema():
     api = get_api()
-    assert api.get_schema(None, 'application/json') is None
+    assert api.get_schema(None) is None
 
     resource = list(api.get_resources('/books'))[1]
     body = resource.body[0]
     schema = json.load(open(os.path.join(DATA_DIR, 'schemas', 'BookRecord.json')))
-    assert api.get_schema(body, 'application/json') == schema
+    assert api.get_schema(body) == schema
 
 def test_existing_traits():
     api = get_api()

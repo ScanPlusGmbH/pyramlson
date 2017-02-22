@@ -1,7 +1,9 @@
-import logging
+# coding: utf-8
+"""
+Pyramlson API Definition utility
+"""
 import ramlfications
 
-from collections import OrderedDict
 from zope.interface import Interface
 
 try:
@@ -9,14 +11,17 @@ try:
 except ImportError: # pragma: no cover
     from urlparse import urlparse
 
-log = logging.getLogger(__name__)
-
 
 class IRamlApiDefinition(Interface):
-        pass
+    """ Marker interface for API Definition """
+    # pylint: disable=inherit-non-class
+    pass
 
 
 class RamlApiDefinition(object):
+    """ RAML Definition utility.
+        Abstracts the access to parsed RAML data
+    """
 
     __traits_cache = {}
 
@@ -30,9 +35,13 @@ class RamlApiDefinition(object):
 
     @property
     def default_mime_type(self):
+        """ Return the default mime-type for a resource
+            if none was defined in RAML
+        """
         return self.raml.media_type
 
     def get_trait(self, name):
+        """ Return a trait from RAML """
         if not self.raml.traits:
             return None
         trait = None
@@ -43,18 +52,21 @@ class RamlApiDefinition(object):
         return self.__traits_cache.get(name)
 
     def get_resources(self, path=None):
-        """ Get resources.
-        """
+        """ Get resources """
         if not path:
             return self.raml.resources
         return (res for res in self.raml.resources if res.path == path)
 
     def get_schema_def(self, name):
+        """ Get schema definition """
+        if self.raml.schemas is None:
+            return None
         for schemas in self.raml.schemas:
             if name in schemas:
                 return schemas[name]
 
-    def get_schema(self, body, mime_type):
+    def get_schema(self, body):
+        """ Extract a schema from body for a given mime-type """
         if isinstance(body, list):
             bodies = body
             for body in bodies:
