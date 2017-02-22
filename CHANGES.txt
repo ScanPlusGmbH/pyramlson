@@ -1,3 +1,7 @@
+1.1.1
+-----
+- Added optional argument transformation callback
+
 1.1.0
 -----
 - Added max_length / min_length checks for URI and query parameters

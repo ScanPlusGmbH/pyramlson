@@ -8,6 +8,8 @@ with open(os.path.join(here, 'README.rst')) as f:
 with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
+VERSION = CHANGES.splitlines()[0]
+
 install_requires = [
     'pyramid',
     'jsonschema',
@@ -25,7 +27,7 @@ testing_extras = tests_require + [
 ]
 
 setup(name='pyramlson',
-    version='1.1.0',
+    version=VERSION,
     description='pyramlson',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
