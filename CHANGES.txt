@@ -1,3 +1,8 @@
+1.2.0
+-----
+- Added optional parameter validation and conversion
+- Improved test coverage
+
 1.1.1
 -----
 - Added optional argument transformation callback
