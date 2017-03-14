@@ -2,20 +2,28 @@
 language: python
 sudo: false
 
-env:
-  - TOXENV=py27
-  - TOXENV=py33
-  - TOXENV=py34
-  - TOXENV=py35
-  - TOXENV=pypy
-  - TOXENV=py2-cover
-  - TOXENV=py3-cover
+matrix:
+    include:
+        - python: 2.7
+          env: TOXENV=py27
+        - python: 3.4
+          env: TOXENV=py34
+        - python: 3.5
+          env: TOXENV=py35
+        - python: pypy
+          env: TOXENV=pypy
+        - python: 3.5
+          env: TOXENV=py2-cover,py3-cover,coverage
 
 install:
   - travis_retry pip install tox
 
 script:
   - travis_retry tox
+
+cache:
+  directories:
+    - $HOME/.cache/pip
 
 notifications:
   email:
