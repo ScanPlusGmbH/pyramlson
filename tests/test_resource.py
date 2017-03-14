@@ -2,6 +2,8 @@ import os
 import unittest
 import inflection
 
+from email.utils import parsedate
+from datetime import datetime
 from pyramid import testing
 
 from pyramid.config import Configurator
@@ -16,7 +18,8 @@ class ResourceFunctionalTests(unittest.TestCase):
         settings = {
             'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
             'pyramlson.debug': 'true',
-            'pyramlson.arguments_transformation_callback': inflection.underscore
+            'pyramlson.arguments_transformation_callback': inflection.underscore,
+            'pyramlson.convert_parameters': 'false'
         }
         self.config = testing.setUp(settings=settings)
         self.config.include('pyramlson')
@@ -54,7 +57,7 @@ class ResourceFunctionalTests(unittest.TestCase):
         app = self.testapp
         r = app.get('/api/v1/books/zzz', status=400)
         assert r.json_body['success'] == False
-        assert r.json_body['message'] == "Malformed parameter 'bookId', expected integer, got 'zzz'"
+        assert "Malformed parameter 'bookId'" in r.json_body['message']
 
     def test_json_validation_error(self):
         app = self.testapp
@@ -126,3 +129,151 @@ class NoMatchingResourceMethodTests(unittest.TestCase):
     def test_valueerror(self):
         self.config.include('pyramlson')
         self.assertRaises(ValueError, self.config.scan, '.bad_resource')
+
+
+def datetime_adapter(obj, request):
+    return obj.isoformat()
+
+
+class ParamsConverterTests(unittest.TestCase):
+
+    def setUp(self):
+        from pyramid.renderers import JSON
+        json_renderer = JSON()
+        settings = {
+            'pyramlson.apidef_path': os.path.join(DATA_DIR, 'test-api.raml'),
+            'pyramlson.debug': 'true',
+            'pyramlson.arguments_transformation_callback': inflection.underscore,
+            'pyramlson.convert_parameters': 'true'
+        }
+        self.config = testing.setUp(settings=settings)
+        self.config.include('pyramlson')
+        json_renderer.add_adapter(datetime, datetime_adapter)
+        self.config.add_renderer('json', json_renderer)
+        self.config.scan('.resource')
+        from webtest import TestApp
+        self.testapp = TestApp(self.config.make_wsgi_app())
+
+    def test_param_type_conversion(self):
+        date_str = 'Sun, 06 Nov 1994 08:49:37 GMT'
+        date = datetime(*parsedate(date_str)[:6])
+        params = {
+            'maxString': 'zzz',
+            'minString': 'tt',
+            'choiceString': 'bar',
+            'patternString': 'ABCD54321',
+            'someNumber': '7',
+            'minMaxNumber': '0.8',
+            'minMaxInteger': '20',
+            'someBool': 'true',
+            'someDate': date_str
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params)
+        b = r.json_body
+        assert type(b['max_string']) is str
+        assert type(b['min_string']) is str
+        assert type(b['choice_string']) is str
+        assert type(b['pattern_string']) is str
+        assert type(b['some_number']) is int
+        assert type(b['min_max_number']) is float
+        assert type(b['min_max_integer']) is int
+        assert type(b['some_bool']) is bool
+        assert b['some_date'] == datetime_adapter(date, None)
+
+    def test_string_param_validation(self):
+        params = {
+            'maxString': 'z' * 20,
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+                "Malformed parameter 'maxString', expected maximum length is 10, got 20"
+
+        params = {
+            'minString': 'z'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+                "Malformed parameter 'minString', expected minimum length is 2, got 1"
+
+        params = {
+            'choiceString': 'biteme'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+                "Malformed parameter 'choiceString', expected one of foo, bar, blah, got 'biteme'"
+
+        params = {
+            'patternString': 'biteme'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Malformed parameter 'patternString', expected pattern ^[A-Z]{4}[0-9]*$, got 'biteme'"
+
+    def test_number_param_validation(self):
+        params = {
+            'someNumber': 'Rasdf'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Malformed parameter 'someNumber', expected a syntactically valid number, got 'Rasdf'"
+
+        params = {
+            'minMaxNumber': '-400.456'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Parameter 'minMaxNumber' is too small, expected at least -10, got -400.456"
+
+        params = {
+            'minMaxNumber': '800.800'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Parameter 'minMaxNumber' is too large, expected at most 100.55, got 800.8"
+
+    def test_integer_param_validation(self):
+        params = {
+            'minMaxInteger': '4.08'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Malformed parameter 'minMaxInteger', expected a syntactically valid integer, got '4.08'"
+
+        params = {
+            'minMaxInteger': '0'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Parameter 'minMaxInteger' is too small, expected at least 7, got 0"
+
+        params = {
+            'minMaxInteger': '100'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Parameter 'minMaxInteger' is too large, expected at most 42, got 100"
+
+    def test_bool_param_validation(self):
+        params = {
+            'someBool': 'yes'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Malformed boolean parameter 'someBool', expected 'true' or 'false', got 'yes'"
+
+    def test_date_param_validation(self):
+        params = {
+            'someDate': '2016-1-1'
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Malformed parameter 'someDate', expected RFC 2616 formatted date, got 2016-1-1"
+
+        date_str = 'Sun, 6 Nov 1000 53:78:37'
+        params = {
+            'someDate': date_str
+        }
+        r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
+        assert r.json_body['message'] == \
+            "Malformed parameter 'someDate': hour must be in 0..23"
+

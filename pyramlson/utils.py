@@ -56,7 +56,10 @@ def _bool_converter(param, value):
     if type(value) is bool:
         return value
     if value.lower() not in ('true', 'false'):
-        msg = "Malformed boolean parameter '{}'".format(param.name)
+        msg = "Malformed boolean parameter '{}', expected 'true' or 'false', got '{}'".format(
+            param.name,
+            value
+        )
         raise HTTPBadRequest(msg)
     return value.lower() == 'true'
 
@@ -72,11 +75,11 @@ def _number_converter(param, value):
     converted = None
     try:
         caster = int
-        if '.' in value:
+        if param.type == 'number' and '.' in value:
             caster = float
         converted = caster(value)
     except ValueError:
-        msg = "Malformed parameter '{}', expected {}, got '{}'".format(
+        msg = "Malformed parameter '{}', expected a syntactically valid {}, got '{}'".format(
             param.name,
             param.type,
             value
@@ -144,7 +147,7 @@ def _date_converter(param, value):
         )
         raise HTTPBadRequest(msg)
     try:
-        return datetime(*parsed[:8])
+        return datetime(*parsed[:6])
     except ValueError as err:
         msg = "Malformed parameter '{}': {}".format(
             param.name,
@@ -154,7 +157,7 @@ def _date_converter(param, value):
 
 
 CONVERTERS = {
-    'boolean': _bool_converter,
+    'bool': _bool_converter,
     'integer': _number_converter,
     'number': _number_converter,
     'string': _string_converter,

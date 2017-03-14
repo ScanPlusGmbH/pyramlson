@@ -188,3 +188,45 @@ traits:
                             {
                                 "token": "AQIC5w...srA.*AAJT...jI5OTg4*"
                             }
+/parametrized:
+  description: Lots of parameters, wheee!
+  get:
+    queryParameters:
+      maxString:
+        type: string
+        default: xxx
+        maxLength: 10
+      minString:
+        type: string
+        default: zzz
+        minLength: 2
+      choiceString:
+        type: string
+        default: foo
+        enum: [ foo, bar, blah ]
+      patternString:
+        type: string
+        default: ABCD5432
+        pattern: ^[A-Z]{4}[0-9]*$
+      someNumber:
+        type: number
+      minMaxNumber:
+        type: number
+        minimum: -10
+        maximum: 100.55
+      minMaxInteger:
+        type: integer
+        minimum: 7
+        maximum: 42
+      someBool:
+        type: bool
+        default: false
+      someDate:
+        type: date
+    responses:
+      200:
+        description: Bla
+        body:
+          application/json:
+            example: |
+              {}

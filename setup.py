@@ -18,6 +18,7 @@ install_requires = [
 
 tests_require = install_requires + [
     'pytest',
+    'pytest-cov',
     'WebTest',
     'inflection'
 ]

@@ -203,9 +203,12 @@ class api_service(object):
             if resource.query_params:
                 for param in resource.query_params:
                     param_value = request.params.get(param.name, MARKER)
-                    if param_value is MARKER:
-                        param_value = param.default
-                    converted = validate_and_convert(param, param_value)
+                    absent = param_value is MARKER
+                    converted = (
+                        validate_and_convert(param, param_value)
+                        if not absent
+                        else param.default
+                    )
                     # query params are always named (i.e. not positional)
                     # so they effectively become keyword agruments in a
                     # method call, we just make sure they are present

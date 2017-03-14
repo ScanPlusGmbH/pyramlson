@@ -1,3 +1,4 @@
+from datetime import datetime
 from collections import OrderedDict
 
 from pyramid.httpexceptions import HTTPNotFound
@@ -11,7 +12,7 @@ from pyramlson import api_service, api_method
 
 
 class Book(object):
-    """ A simcple book class """
+    """ A simple book class """
 
     def __init__(self, id, title, author, isbn=None):
         self.id = id
@@ -115,3 +116,21 @@ class SomeOtherThings(object):
     @api_method('get')
     def things(self, thing_type=None):
         return dict(thing_type=thing_type)
+
+
+@api_service('/parametrized')
+class ConvertMyParams(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @api_method('get')
+    def parametrized(self, max_string='', min_string='xy',
+                     choice_string='foo', pattern_string='ABCD54321',
+                     some_number=5.9, min_max_number=42,
+                     min_max_integer=30, some_bool=False,
+                     some_date=datetime(2017, 1, 1, 1, 1, 1)):
+        ret = locals()
+        del ret['self']
+        return ret
+
