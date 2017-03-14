@@ -186,8 +186,8 @@ class ParamsConverterTests(unittest.TestCase):
             'maxString': 'z' * 20,
         }
         r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
-        assert r.json_body['message'] == \
-                "Malformed parameter 'maxString', expected maximum length is 10, got 20"
+        assert "Malformed parameter 'maxString'" in r.json_body['message']
+        assert "expected maximum length is 10, got 20" in r.json_body['message']
 
         params = {
             'minString': 'z'
@@ -259,22 +259,22 @@ class ParamsConverterTests(unittest.TestCase):
             'someBool': 'yes'
         }
         r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
-        assert r.json_body['message'] == \
-            "Malformed boolean parameter 'someBool', expected 'true' or 'false', got 'yes'"
+        assert "Malformed boolean parameter 'someBool'" in r.json_body['message']
+        assert "expected 'true' or 'false', got 'yes'" in r.json_body['message']
 
     def test_date_param_validation(self):
         params = {
-            'someDate': '2016-1-1'
+            'someDate': '2016-1-11'
         }
         r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
-        assert r.json_body['message'] == \
-            "Malformed parameter 'someDate', expected RFC 2616 formatted date, got 2016-1-1"
+        assert "Malformed parameter 'someDate'" in r.json_body['message']
+        assert "expected RFC 2616 formatted date, got 2016-1-11" in r.json_body['message']
 
-        date_str = 'Sun, 6 Nov 1000 53:78:37'
+        date_str = 'Sun, 06 Nov 1000 53:78:37'
         params = {
             'someDate': date_str
         }
         r = self.testapp.get('/api/v1/parametrized', params=params, status=400)
-        assert r.json_body['message'] == \
-            "Malformed parameter 'someDate': hour must be in 0..23"
+        assert "Malformed parameter 'someDate':" in r.json_body['message']
+        assert "hour must be in 0..23" in r.json_body['message']
 
