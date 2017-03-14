@@ -5,6 +5,7 @@ import inflection
 from email.utils import parsedate
 from datetime import datetime
 from pyramid import testing
+from six import text_type
 
 from pyramid.config import Configurator
 
@@ -170,10 +171,10 @@ class ParamsConverterTests(unittest.TestCase):
         }
         r = self.testapp.get('/api/v1/parametrized', params=params)
         b = r.json_body
-        assert type(b['max_string']) is str
-        assert type(b['min_string']) is str
-        assert type(b['choice_string']) is str
-        assert type(b['pattern_string']) is str
+        assert type(b['max_string']) is text_type
+        assert type(b['min_string']) is text_type
+        assert type(b['choice_string']) is text_type
+        assert type(b['pattern_string']) is text_type
         assert type(b['some_number']) is int
         assert type(b['min_max_number']) is float
         assert type(b['min_max_integer']) is int
