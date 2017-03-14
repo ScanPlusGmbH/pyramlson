@@ -20,18 +20,27 @@ class IRamlApiDefinition(Interface):
 
 class RamlApiDefinition(object):
     """ RAML Definition utility.
-        Abstracts the access to parsed RAML data
+        Abstracts the access to parsed RAML data.
+
+        :param apidef_path: Path to RAML definition
+        :param args_transform_cb: Optional callback that transforms
+            view callable argument names (e.g. camelCase vs.
+            underscore_case)
+        :param convert_params: If true, all parameters
+            will be converted to their declared types before beeing
+            passed in to the view callable
     """
 
     __traits_cache = {}
 
-    def __init__(self, apidef_path, args_transform_cb=None):
+    def __init__(self, apidef_path, args_transform_cb=None, convert_params=False):
         self.raml = ramlfications.parse(apidef_path)
         self.base_uri = self.raml.base_uri
         if self.base_uri.endswith('/'):
             self.base_uri = self.base_uri[:-1]
         self.base_path = urlparse(self.base_uri).path
         self.args_transform_cb = args_transform_cb
+        self.convert_params = convert_params
 
     @property
     def default_mime_type(self):

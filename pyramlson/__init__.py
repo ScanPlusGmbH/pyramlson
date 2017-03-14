@@ -6,6 +6,7 @@ import re
 import os
 import logging
 
+from email.utils import parsedate
 from inspect import getmembers
 from collections import namedtuple, defaultdict
 
@@ -21,9 +22,14 @@ from pyramid.httpexceptions import (
     HTTPNoContent,
 )
 from pyramid.interfaces import IExceptionResponse
+from pyramid.settings import asbool
 
 from .apidef import IRamlApiDefinition
-from .utils import prepare_json_body, render_view
+from .utils import (
+    prepare_json_body,
+    render_view,
+    validate_and_convert
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -177,6 +183,7 @@ class api_service(object):
             raise ValueError(msg)
         transform = self.apidef.args_transform_cb
         transform = transform if callable(transform) else lambda arg: arg
+        convert = self.apidef.convert_params
         def view(context, request):
             required_params = [context]
             optional_params = dict()
@@ -184,22 +191,21 @@ class api_service(object):
             if resource.uri_params:
                 for param in resource.uri_params:
                     param_value = request.matchdict[param.name]
-                    validate_param(param, param_value)
+                    converted = validate_and_convert(param, param_value)
                     # pyramid router makes sure the URI params are all
                     # set, otherwise the view isn't called all, because
                     # a NotFound error is triggered before the request
                     # can be routed to this view
-                    required_params.append(param_value)
+                    required_params.append(converted if convert else param_value)
             # If there's a body defined - include it before traits or query params
             if resource.body:
                 required_params.append(prepare_json_body(request, resource.body))
             if resource.query_params:
                 for param in resource.query_params:
                     param_value = request.params.get(param.name, MARKER)
-                    if param_value is not MARKER:
-                        validate_param(param, param_value)
-                    else:
+                    if param_value is MARKER:
                         param_value = param.default
+                    converted = validate_and_convert(param, param_value)
                     # query params are always named (i.e. not positional)
                     # so they effectively become keyword agruments in a
                     # method call, we just make sure they are present
@@ -207,7 +213,7 @@ class api_service(object):
                     if param.required and param.name not in request.params:
                         raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
                     else:
-                        optional_params[transform(param.name)] = param_value
+                        optional_params[transform(param.name)] = converted if convert else param_value
             result = meth(*required_params, **optional_params)
             return render_view(request, result, cfg.returns)
 
@@ -230,7 +236,7 @@ def create_options_view(supported_methods):
     def view(context, request):  # pylint: disable=unused-argument,missing-docstring
         response = HTTPNoContent()
         response.headers['Access-Control-Allow-Methods'] =\
-            ', '.join(supported_methods)
+                ', '.join(supported_methods)
         return response
     return view
 
@@ -265,45 +271,20 @@ def includeme(config):
     args_transform_cb = None
     if 'pyramlson.arguments_transformation_callback' in settings:
         args_transform_cb = DottedNameResolver().maybe_resolve(
-            settings['pyramlson.arguments_transformation_callback']
-        )
+                settings['pyramlson.arguments_transformation_callback']
+                )
+
+    convert_params = False
+    if 'pyramlson.convert_parameters' in settings:
+        convert_params = asbool(settings['pyramlson.convert_parameters'])
 
     res = AssetResolver()
     apidef_path = res.resolve(settings['pyramlson.apidef_path'])
-    apidef = RamlApiDefinition(apidef_path.abspath(), args_transform_cb=args_transform_cb)
+    apidef = RamlApiDefinition(
+            apidef_path.abspath(),
+            args_transform_cb=args_transform_cb,
+            convert_params=convert_params
+            )
     config.registry.registerUtility(apidef, IRamlApiDefinition)
 
 
-def validate_param(param, value):
-    """ Validate input parameters """
-    # FIXME: add more checks
-    if param.type == 'integer':
-        try:
-            int(value)
-        except ValueError:
-            msg = "Malformed parameter '{}', expected integer, got '{}'".format(
-                param.name, value
-            )
-            raise HTTPBadRequest(msg)
-    if param.type == 'string':
-        if param.enum and value not in param.enum:
-            raise HTTPBadRequest("Malformed parameter '{}', expected one of {}, got '{}'".format(param.name, ', '.join(param.enum), value))
-        if param.pattern:
-            result = re.search(param.pattern, value)
-            if not result:
-                raise HTTPBadRequest("Malformed parameter '{}', expected pattern {}, got '{}'".format(param.name, param.pattern, value))
-        if param.min_length and len(value) < param.min_length:
-            msg = "Malformed parameter '{}', expected minimum length is {}, got {}"
-            raise HTTPBadRequest(msg.format(
-                param.name,
-                param.min_length,
-                len(value)
-            ))
-        if param.max_length and len(value) > param.max_length:
-            msg = "Malformed parameter '{}', expected maximum length is {}, got {}"
-            raise HTTPBadRequest(msg.format(
-                param.name,
-                param.max_length,
-                len(value)
-            ))
-__all__ = ['api_method', 'api_service']
