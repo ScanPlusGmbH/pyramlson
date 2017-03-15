@@ -202,21 +202,30 @@ class api_service(object):
                 required_params.append(prepare_json_body(request, resource.body))
             if resource.query_params:
                 for param in resource.query_params:
-                    param_value = request.params.get(param.name, MARKER)
-                    absent = param_value is MARKER
-                    converted = (
-                        validate_and_convert(param, param_value)
-                        if not absent
-                        else param.default
-                    )
                     # query params are always named (i.e. not positional)
                     # so they effectively become keyword agruments in a
                     # method call, we just make sure they are present
                     # in the request if marked as 'required'
                     if param.required and param.name not in request.params:
                         raise HTTPBadRequest("{} ({}) is required".format(param.name, param.type))
+                    param_value = request.params.get(param.name, MARKER)
+                    absent = param_value is MARKER
+                    # If there's no default value defined in RAML let the decorated
+                    # method decide which defaults to use. Unfortunatelly there is
+                    # no way to tell whether a default value was declared as 'null'
+                    # in RAML or if it was omitted - it's None in both cases
+                    if absent and param.default is None:
+                        continue
+                    if not absent:
+                        if convert:
+                            param_value = validate_and_convert(param, param_value)
                     else:
-                        optional_params[transform(param.name)] = converted if convert else param_value
+                        if convert:
+                            param_value = validate_and_convert(param, param.default)
+                        else:
+                            param_value = param.default
+                    optional_params[transform(param.name)] = param_value
+            print("optional", optional_params)
             result = meth(*required_params, **optional_params)
             return render_view(request, result, cfg.returns)
 

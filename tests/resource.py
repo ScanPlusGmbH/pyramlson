@@ -129,6 +129,7 @@ class ConvertMyParams(object):
                      choice_string='foo', pattern_string='ABCD54321',
                      some_number=5.9, min_max_number=42,
                      min_max_integer=30, some_bool=False,
+                     missing_default='defined in method!',
                      some_date=datetime(2017, 1, 1, 1, 1, 1)):
         ret = locals()
         del ret['self']

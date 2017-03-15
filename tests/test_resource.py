@@ -278,3 +278,6 @@ class ParamsConverterTests(unittest.TestCase):
         assert "Malformed parameter 'someDate':" in r.json_body['message']
         assert "hour must be in 0..23" in r.json_body['message']
 
+    def test_missing_default_in_raml(self):
+        r = self.testapp.get('/api/v1/parametrized', status=200)
+        assert "defined in method!" == r.json_body['missing_default']
