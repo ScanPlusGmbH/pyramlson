@@ -1,3 +1,7 @@
+1.2.1
+-----
+- Fixed handling of missing query parameters
+
 1.2.0
 -----
 - Added optional parameter validation and conversion
