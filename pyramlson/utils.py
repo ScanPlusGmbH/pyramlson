@@ -31,7 +31,10 @@ def prepare_json_body(request, body):
                 format_checker=jsonschema.draft4_format_checker
             )
         except jsonschema.ValidationError as err:
-            raise HTTPBadRequest(str(err))
+            if request.registry.settings.get('pyramlson.debug'):
+                raise HTTPBadRequest(str(err))
+            else:
+                raise HTTPBadRequest(err.message)
     return data
 
 
