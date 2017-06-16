@@ -225,7 +225,6 @@ class api_service(object):
                         else:
                             param_value = param.default
                     optional_params[transform(param.name)] = param_value
-            print("optional", optional_params)
             result = meth(*required_params, **optional_params)
             return render_view(request, result, cfg.returns)
 
