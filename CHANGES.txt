@@ -1,3 +1,6 @@
+1.2.3
+- Removed debug output for optional params
+
 1.2.2
 -----
 - Shorten the jsonschema validation error message if debug mode is off
