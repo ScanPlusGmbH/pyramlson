@@ -94,9 +94,10 @@ class api_service(object):
     """
     # pylint: disable=invalid-name
 
-    def __init__(self, resource_path):
+    def __init__(self, resource_path, route_name=None):
         LOG.debug("Resource path: %s", resource_path)
         self.resource_path = resource_path
+        self.route_name = route_name
         self.resources = []
         self.apidef = None
         self.cls = None
@@ -112,42 +113,41 @@ class api_service(object):
     def create_route(self, config):
         LOG.debug("Creating route for %s", self.resource_path)
         supported_methods = []
-        route_name = None
+
+        path = self.resource_path
+        if self.apidef.base_path:
+            path = "{}{}".format(self.apidef.base_path, path)
 
         # Find all methods for this resource path
         for resource in self.apidef.get_resources(self.resource_path):
-            if route_name is None:
-                path = self.resource_path
-                if self.apidef.base_path:
-                    path = "{}{}".format(self.apidef.base_path, path)
-                route_name = "{}-{}".format(resource.display_name, path)
+            if self.route_name is None:
+                self.route_name = "{}-{}".format(resource.display_name, path)
 
             method = resource.method.upper()
-            self.resources.append((route_name, method, resource, None))
+            self.resources.append((method, resource, None))
             supported_methods.append(method)
 
         # Add one route for all the methods at this resource path
         if supported_methods:
             LOG.debug("Registering route with path %s", path)
-            config.add_route(route_name, path, factory=self.cls)
+            config.add_route(self.route_name, path, factory=self.cls)
             # add a default OPTIONS view if none was defined by the resource
             opts_meth = 'OPTIONS'
             if opts_meth not in supported_methods:
                 methods = supported_methods + [opts_meth]
                 self.resources.append((
-                    route_name,
                     'OPTIONS',
                     resource,
                     create_options_view(methods)
                 ))
 
     def create_views(self, config):
-        for (route_name, method, resource, default_view) in self.resources:
-            LOG.debug("Creating view %s %s", route_name, method)
+        for (method, resource, default_view) in self.resources:
+            LOG.debug("Creating view %s %s", self.route_name, method)
             if default_view:
                 config.add_view(
                     default_view,
-                    route_name=route_name,
+                    route_name=self.route_name,
                     request_method=method
                 )
             else:
@@ -155,13 +155,13 @@ class api_service(object):
                 LOG.debug(
                     "Registering view %s for route name '%s', resource '%s', method '%s'",
                     view,
-                    route_name,
+                    self.route_name,
                     resource,
                     method
                 )
                 config.add_view(
                     view,
-                    route_name=route_name,
+                    route_name=self.route_name,
                     request_method=method,
                     permission=permission
                 )
@@ -297,5 +297,3 @@ def includeme(config):
             convert_params=convert_params
             )
     config.registry.registerUtility(apidef, IRamlApiDefinition)
-
-
