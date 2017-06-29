@@ -1,4 +1,11 @@
+1.3.0
+-----
+- Replaced ValueError with custom Exception when a service doesn't
+  contain any decorated methods
+- Added route_name parameter to api_service decorator (thanks @stoer)
+
 1.2.3
+-----
 - Removed debug output for optional params
 
 1.2.2
