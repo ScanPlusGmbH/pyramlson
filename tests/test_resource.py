@@ -12,6 +12,8 @@ from pyramid.config import Configurator
 from .base import DATA_DIR
 from .resource import BOOKS
 
+from pyramlson import NoMethodFoundError
+
 
 class ResourceFunctionalTests(unittest.TestCase):
 
@@ -129,7 +131,7 @@ class NoMatchingResourceMethodTests(unittest.TestCase):
 
     def test_valueerror(self):
         self.config.include('pyramlson')
-        self.assertRaises(ValueError, self.config.scan, '.bad_resource')
+        self.assertRaises(NoMethodFoundError, self.config.scan, '.bad_resource')
 
 
 def datetime_adapter(obj, request):

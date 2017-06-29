@@ -52,6 +52,11 @@ MethodRestConfig = namedtuple('MethodRestConfig', [
 
 MARKER = object()
 
+
+class NoMethodFoundError(Exception):
+    """ Raised when no matching method(s) for a service could be found """
+
+
 class api_method(object):
     # pylint: disable=invalid-name
 
@@ -180,7 +185,7 @@ class api_service(object):
                 self.cls,
                 resource
             )
-            raise ValueError(msg)
+            raise NoMethodFoundError(msg)
         transform = self.apidef.args_transform_cb
         transform = transform if callable(transform) else lambda arg: arg
         convert = self.apidef.convert_params
