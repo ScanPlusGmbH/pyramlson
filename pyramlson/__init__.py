@@ -136,7 +136,6 @@ class api_service(object):
             if opts_meth not in supported_methods:
                 methods = supported_methods + [opts_meth]
                 self.resources.append((
-                    self.route_name,
                     'OPTIONS',
                     resource,
                     create_options_view(methods)
