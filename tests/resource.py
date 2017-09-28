@@ -40,6 +40,7 @@ BOOKS[456] = {
     "author": "Dan Simmons",
     "isbn": "56789"
 }
+FILES = OrderedDict()
 
 def get_book(book_id):
     bid = int(book_id)
@@ -135,3 +136,29 @@ class ConvertMyParams(object):
         del ret['self']
         return ret
 
+
+@api_service('/files/{fileId}')
+class FileResource(object):
+
+    __acl__ = [
+        (Allow, 'api-user-reader', ('view', )),
+        (Allow, 'api-user-writer', ('view', 'create', 'update')),
+        (Allow, 'admin', ALL_PERMISSIONS),
+        DENY_ALL,
+    ]
+
+    def __init__(self, request):
+        self.request = request
+
+    @api_method('get', permission='view')
+    def get_one(self, file_id):
+        from pyramid.response import Response
+        return Response(body=FILES[file_id])
+
+    @api_method('post', permission='create', returns=201)
+    def create_record(self, file_id, data):
+        FILES[file_id] = data
+        return {
+            "success": True,
+            "message": "File created"
+        }

@@ -38,6 +38,12 @@ def prepare_json_body(request, body):
     return data
 
 
+def render_mime_view(data, status_code, mime_type):
+    """ Render data to response using the correct response status code and mime type """
+    data.content_type = mime_type
+    data.status_int = status_code
+    return data
+
 def render_view(request, data, status_code):
     """ Render data to response using the correct response status code """
     response = request.response

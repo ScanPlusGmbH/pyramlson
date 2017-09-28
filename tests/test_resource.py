@@ -121,6 +121,21 @@ class ResourceFunctionalTests(unittest.TestCase):
         r = app.get('/api/v1/books/some/other/things', params=dict(foo='bar'), status=400)
         assert r.json_body['message'] == 'thingType (string) is required'
 
+    def test_post_file(self):
+        file_id = 'foo'
+        file_content = b'foobar'
+        uri = '/api/v1/files/{}'.format(file_id)
+        r = self.testapp.post(
+            uri,
+            file_content,
+            content_type='application/octet-stream',
+            status=201
+        )
+
+        r2 = self.testapp.get('/api/v1/files/{}'.format(file_id), status=200)
+        assert r2.body == file_content
+
+
 class NoMatchingResourceMethodTests(unittest.TestCase):
 
     def setUp(self):
