@@ -27,6 +27,7 @@ from pyramid.settings import asbool
 from .apidef import IRamlApiDefinition
 from .utils import (
     prepare_json_body,
+    render_mime_view,
     render_view,
     validate_and_convert
 )
@@ -204,7 +205,10 @@ class api_service(object):
                     required_params.append(converted if convert else param_value)
             # If there's a body defined - include it before traits or query params
             if resource.body:
-                required_params.append(prepare_json_body(request, resource.body))
+                if resource.body[0].mime_type == "application/json":
+                    required_params.append(prepare_json_body(request, resource.body))
+                else:
+                    required_params.append(request.body)
             if resource.query_params:
                 for param in resource.query_params:
                     # query params are always named (i.e. not positional)
@@ -231,6 +235,16 @@ class api_service(object):
                             param_value = param.default
                     optional_params[transform(param.name)] = param_value
             result = meth(*required_params, **optional_params)
+
+            # check if a response type is specified
+            for response in resource.responses:
+                if response.code == cfg.returns and len(response.body) == 1:
+                    body = response.body[0]
+                    if body.mime_type == 'application/json':
+                        break
+                    response_mime_type = body.mime_type
+                    return render_mime_view(result, cfg.returns, mime_type=response_mime_type)
+
             return render_view(request, result, cfg.returns)
 
         return (view, cfg.permission)
